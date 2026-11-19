@@ -114,6 +114,18 @@ def _windows() -> list[tuple[str, callable]]:
 
         set_due_date_dialog(parent=mw, card_ids=[_card().id], config_key=None)
 
+    def find_duplicates():
+        from aqt.browser.find_duplicates import FindDuplicatesDialog
+
+        FindDuplicatesDialog(browser=aqt.dialogs.open("Browser", mw), mw=mw)
+
+    def empty_cards():
+        # Opens only when the collection has empty cards; otherwise Anki shows
+        # a tooltip and the sweep logs "no window opened".
+        from aqt.emptycards import show_empty_cards
+
+        show_empty_cards(mw)
+
     def deck_options():
         from aqt.deckoptions import display_options_for_deck_id
 
@@ -134,6 +146,7 @@ def _windows() -> list[tuple[str, callable]]:
         ("deck-description", deck_description),
         ("addons", addons),
         ("about", about),
+        ("empty-cards", empty_cards),
     ]
     if _card():
         windows += [
@@ -142,6 +155,7 @@ def _windows() -> list[tuple[str, callable]]:
             ("fields", fields),
             ("card-templates", card_templates),
             ("find-replace", find_replace),
+            ("find-duplicates", find_duplicates),
             ("set-due-date", set_due_date),
         ]
     return windows
