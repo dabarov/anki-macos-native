@@ -115,8 +115,10 @@ Set up whichever models you want. The picker greys out the ones it can't find an
 The panel sends the model you picked the deck name, the card's question, the answer (only once you've revealed it) and the conversation for that card. Nothing is sent until you ask a question.
 
 - **Claude Code** runs with its tools, MCP servers, skills and settings files switched off.
-- **Codex** runs in a read-only sandbox in an empty folder, with no saved session.
-- **Ollama** models on your Mac never leave it. Cloud models go to Ollama's servers.
+- **Codex** runs with every way to act switched off (no shell, browser, computer use, apps, plugins, MCP servers, hooks or web search), in an empty folder, with no saved session. Cards from shared decks can contain prompt injection, so the models can only reply in text.
+- **Gemini CLI** runs non-interactively, which denies tools that need confirmation; its file tools are limited to an empty working folder. Its prompt is passed as a command-line argument, which other users on the same Mac could briefly see in the process list.
+- **Replies** are shown as plain text with light formatting. Links and images aren't rendered, so a reply can't load anything from the internet.
+- **Ollama** models on your Mac never leave it. Cloud models go to Ollama's servers. If you point `ollama_url` at another machine, use a trusted network: the connection isn't encrypted.
 
 ## Configuration
 
@@ -160,7 +162,7 @@ cd anki-macos-native
 | `providers.py` | Finds and runs each model: Codex, Gemini CLI, Ollama |
 | `claude_cli.py` | Streams one reply from Claude Code with tools off |
 | `web/ai-panel.css`, `web/ai-panel.js` | The panel UI and model picker, using the same design tokens as the theme |
-| `snapshot.py`, `audit.py`, `sweep.py` | Dev tools: `ANKI_MN_SNAPSHOT=<dir>` saves each main-window screen as PNG; `ANKI_MN_AUDIT=<dir>` writes the computed fonts of every screen; `ANKI_MN_SWEEP=<dir>` opens every window (Browser, Add, Stats, Options, Card Info, Import, About, sync sign-in, Profiles, …) in light and dark and saves a PNG of each, without changing the collection |
+| `snapshot.py`, `audit.py`, `sweep.py` | Dev tools, left out of release packages: `ANKI_MN_SNAPSHOT=<dir>` saves each main-window screen as PNG; `ANKI_MN_AUDIT=<dir>` writes the computed fonts of every screen; `ANKI_MN_SWEEP=<dir>` opens every window (Browser, Add, Stats, Options, Card Info, Import, About, sync sign-in, Profiles, …) in light and dark and saves a PNG of each, without changing the collection |
 
 ## Credits
 
