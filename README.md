@@ -37,12 +37,17 @@
 - **An inset, grouped deck list** with rounded row highlights, chevrons for subdecks, an accent tint on the current deck, tabular counts and a "⋯" options button that appears on hover.
 - **A deck overview** with a large title, count tiles and one clear Study Now button.
 - **A calmer review bar.** Show Answer is the default button. Again / Hard / Good / Easy are tinted capsules, so colour tells them apart without four solid fills competing.
+- **Menus and the deck Options screen match too.** Pop-up menus get rounded corners, an inset accent highlight and inset separators. Deck Options gets grouped sections, a segmented Preset / This deck / Today only control and macOS-style switches.
 - **Motion that feels physical.** Buttons press in the moment you click and spring back on release. Screens settle in with a critically damped spring, only when you change screens.
 - **Accessibility built in.** Reduce Motion (macOS or Anki) swaps motion for a short fade. Reduce Transparency turns glass solid. Increase Contrast strengthens edges and secondary text. VoiceOver labels the deck disclosure buttons.
 
 <p align="center">
   <img src="docs/screenshots/dark-decks.png" alt="Deck list in dark mode" width="900">
 </p>
+
+| Deck Options | In dark mode |
+| --- | --- |
+| ![Deck Options](docs/screenshots/deck-options.png) | ![Deck Options in dark mode](docs/screenshots/dark-deck-options.png) |
 
 ### Ask AI, right next to the card
 
@@ -128,6 +133,8 @@ cd anki-macos-native
 | --- | --- |
 | `__init__.py` | Adds the theme to Anki's main-window pages, reads the accent colour, swaps stock Arial on cards |
 | `web/macos.css`, `web/macos.js` | The theme. Every rule is scoped to `:root[data-mn="<screen>"]` |
+| `web/pages.css` | Anki's Svelte pages (deck Options, Card Info, …), styled through their Bootstrap classes |
+| `qt_style.py` | Pop-up menu styling, with rounded corners on menus Anki opens |
 | `ai_panel.py` | The Ask AI dock: card context, per-card conversation, model choice, shortcut pausing |
 | `providers.py` | Finds and runs each model: Codex, Gemini CLI, Ollama |
 | `claude_cli.py` | Streams one reply from Claude Code with tools off |
