@@ -39,6 +39,7 @@
 - **A calmer review bar.** Show Answer is the default button. Again / Hard / Good / Easy are tinted capsules, so colour tells them apart without four solid fills competing.
 - **The Browser, Add, Edit and Preferences windows match too.** The Browser table drops its grid and boxed header for an accent selection, the sidebar reads like a Finder source list, and the note editor (Add, Edit, Browser) gets borderless toolbar buttons and rounded fields. Add is the Add window's default button.
 - **The card template editor and Stats match too.** Front / Back / Styling becomes a segmented switch and templates are edited in SF Mono in a rounded box. Stats gets a glass header with segmented controls, and every chart's range picker becomes one too.
+- **Every other window follows the same rules.** List boxes are rounded with accent selection (grey when the window isn't focused), text boxes are rounded, and any web-based screen gets the page theme by default: Card Info, Change Notetype, Import, About, Find Duplicates, and screens a future Anki adds. Only windows that render cards are left showing your note type's own CSS.
 - **Card previews match the review screen.** The Browser's preview shows cards with the same styling and font, under a button bar with chevron buttons and a hairline divider.
 - **Menus and the deck Options screen match too.** Pop-up menus get rounded corners, an inset accent highlight and inset separators. Deck Options gets grouped sections, a segmented Preset / This deck / Today only control and macOS-style switches.
 - **Motion that feels physical.** Buttons press in the moment you click and spring back on release. Screens settle in with a critically damped spring, only when you change screens.
@@ -59,6 +60,10 @@
 | Stats | Card templates (dark) |
 | --- | --- |
 | ![Stats](docs/screenshots/stats.png) | ![Card template editor in dark mode](docs/screenshots/dark-card-templates.png) |
+
+| Card Info (dark) | Import |
+| --- | --- |
+| ![Card Info in dark mode](docs/screenshots/dark-card-info.png) | ![CSV import](docs/screenshots/import-csv.png) |
 
 | Deck Options | In dark mode |
 | --- | --- |
@@ -148,14 +153,14 @@ cd anki-macos-native
 | --- | --- |
 | `__init__.py` | Adds the theme to Anki's main-window pages, reads the accent colour, swaps stock Arial on cards |
 | `web/macos.css`, `web/macos.js` | The theme. Every rule is scoped to `:root[data-mn="<screen>"]` |
-| `web/pages.css` | Anki's Svelte pages (deck Options, Stats, Card Info, …), styled through their Bootstrap classes |
-| `qt_style.py` | Qt styling: pop-up menus, the Browser table and sidebar, the card preview's button bar, the card template editor, default buttons in Add and Preferences |
+| `web/pages.css` | Every other web screen (deck Options, Stats, Card Info, Import, About, …), styled through shared Bootstrap classes |
+| `qt_style.py` | Qt styling: pop-up menus, list and text boxes in every dialog, the Browser table and sidebar, the card preview's button bar, the card template editor, default buttons in Add and Preferences |
 | `web/editor.css`, `web/editor.js` | The note editor in Add, Edit and the Browser, including the stock-Arial swap inside fields |
 | `ai_panel.py` | The Ask AI dock: card context, per-card conversation, model choice, shortcut pausing |
 | `providers.py` | Finds and runs each model: Codex, Gemini CLI, Ollama |
 | `claude_cli.py` | Streams one reply from Claude Code with tools off |
 | `web/ai-panel.css`, `web/ai-panel.js` | The panel UI and model picker, using the same design tokens as the theme |
-| `snapshot.py`, `audit.py` | Dev tools: `ANKI_MN_SNAPSHOT=<dir>` saves each screen as PNG; `ANKI_MN_AUDIT=<dir>` writes the computed fonts of every screen |
+| `snapshot.py`, `audit.py`, `sweep.py` | Dev tools: `ANKI_MN_SNAPSHOT=<dir>` saves each main-window screen as PNG; `ANKI_MN_AUDIT=<dir>` writes the computed fonts of every screen; `ANKI_MN_SWEEP=<dir>` opens every window (Browser, Add, Stats, Options, Card Info, Import, About, …) in light and dark and saves a PNG of each, without changing the collection |
 
 ## Credits
 
