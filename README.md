@@ -38,6 +38,7 @@
 - **A deck overview** with a large title, count tiles and one clear Study Now button.
 - **A calmer review bar.** Show Answer is the default button. Again / Hard / Good / Easy are tinted capsules, so colour tells them apart without four solid fills competing.
 - **The Browser, Add, Edit and Preferences windows match too.** The Browser table drops its grid and boxed header for an accent selection, the sidebar reads like a Finder source list, and the note editor (Add, Edit, Browser) gets borderless toolbar buttons and rounded fields. Add is the Add window's default button.
+- **The card template editor and Stats match too.** Front / Back / Styling becomes a segmented switch and templates are edited in SF Mono in a rounded box. Stats gets a glass header with segmented controls, and every chart's range picker becomes one too.
 - **Card previews match the review screen.** The Browser's preview shows cards with the same styling and font, under a button bar with chevron buttons and a hairline divider.
 - **Menus and the deck Options screen match too.** Pop-up menus get rounded corners, an inset accent highlight and inset separators. Deck Options gets grouped sections, a segmented Preset / This deck / Today only control and macOS-style switches.
 - **Motion that feels physical.** Buttons press in the moment you click and spring back on release. Screens settle in with a critically damped spring, only when you change screens.
@@ -54,6 +55,10 @@
 | Add | Edit (dark) | Preview |
 | --- | --- | --- |
 | ![The Add window](docs/screenshots/add.png) | ![The Edit window in dark mode](docs/screenshots/dark-edit.png) | ![Card preview](docs/screenshots/preview.png) |
+
+| Stats | Card templates (dark) |
+| --- | --- |
+| ![Stats](docs/screenshots/stats.png) | ![Card template editor in dark mode](docs/screenshots/dark-card-templates.png) |
 
 | Deck Options | In dark mode |
 | --- | --- |
@@ -143,8 +148,8 @@ cd anki-macos-native
 | --- | --- |
 | `__init__.py` | Adds the theme to Anki's main-window pages, reads the accent colour, swaps stock Arial on cards |
 | `web/macos.css`, `web/macos.js` | The theme. Every rule is scoped to `:root[data-mn="<screen>"]` |
-| `web/pages.css` | Anki's Svelte pages (deck Options, Card Info, …), styled through their Bootstrap classes |
-| `qt_style.py` | Qt styling: pop-up menus, the Browser table and sidebar, the card preview's button bar, default buttons in Add and Preferences |
+| `web/pages.css` | Anki's Svelte pages (deck Options, Stats, Card Info, …), styled through their Bootstrap classes |
+| `qt_style.py` | Qt styling: pop-up menus, the Browser table and sidebar, the card preview's button bar, the card template editor, default buttons in Add and Preferences |
 | `web/editor.css`, `web/editor.js` | The note editor in Add, Edit and the Browser, including the stock-Arial swap inside fields |
 | `ai_panel.py` | The Ask AI dock: card context, per-card conversation, model choice, shortcut pausing |
 | `providers.py` | Finds and runs each model: Codex, Gemini CLI, Ollama |
