@@ -37,12 +37,21 @@
 - **An inset, grouped deck list** with rounded row highlights, chevrons for subdecks, an accent tint on the current deck, tabular counts and a "⋯" options button that appears on hover.
 - **A deck overview** with a large title, count tiles and one clear Study Now button.
 - **A calmer review bar.** Show Answer is the default button. Again / Hard / Good / Easy are tinted capsules, so colour tells them apart without four solid fills competing.
+- **The Browser, Add and Preferences windows match too.** The Browser table drops its grid and boxed header for an accent selection, the sidebar reads like a Finder source list, and the note editor gets borderless toolbar buttons and rounded fields. Add is the Add window's default button.
 - **Menus and the deck Options screen match too.** Pop-up menus get rounded corners, an inset accent highlight and inset separators. Deck Options gets grouped sections, a segmented Preset / This deck / Today only control and macOS-style switches.
 - **Motion that feels physical.** Buttons press in the moment you click and spring back on release. Screens settle in with a critically damped spring, only when you change screens.
 - **Accessibility built in.** Reduce Motion (macOS or Anki) swaps motion for a short fade. Reduce Transparency turns glass solid. Increase Contrast strengthens edges and secondary text. VoiceOver labels the deck disclosure buttons.
 
 <p align="center">
   <img src="docs/screenshots/dark-decks.png" alt="Deck list in dark mode" width="900">
+</p>
+
+| Browser | In dark mode |
+| --- | --- |
+| ![Browser](docs/screenshots/browser.png) | ![Browser in dark mode](docs/screenshots/dark-browser.png) |
+
+<p align="center">
+  <img src="docs/screenshots/add.png" alt="The Add window" width="640">
 </p>
 
 | Deck Options | In dark mode |
@@ -106,7 +115,7 @@ Tools → Add-ons → macOS Native → Config. Restart Anki after changing a set
 | --- | --- | --- |
 | `accent` | `"system"` | Follows the macOS accent colour, or set a hex colour such as `"#5E5CE6"`. |
 | `motion` | `true` | `false` turns off entrance motion. |
-| `card_font` | `"system"` | Shows stock-Arial cards in SF. `"template"` shows exactly what the card's CSS says. |
+| `card_font` | `"system"` | Shows stock-Arial cards and editor fields in SF. `"template"` shows exactly what the card's CSS says. |
 | `claude_model` | `""` | Claude model. Empty uses Claude Code's default. |
 | `codex_model` | `""` | ChatGPT model. Empty uses the first model Codex lists for your account. |
 | `gemini_model` | `""` | Gemini model. Empty uses the Gemini CLI default. |
@@ -134,7 +143,8 @@ cd anki-macos-native
 | `__init__.py` | Adds the theme to Anki's main-window pages, reads the accent colour, swaps stock Arial on cards |
 | `web/macos.css`, `web/macos.js` | The theme. Every rule is scoped to `:root[data-mn="<screen>"]` |
 | `web/pages.css` | Anki's Svelte pages (deck Options, Card Info, …), styled through their Bootstrap classes |
-| `qt_style.py` | Pop-up menu styling, with rounded corners on menus Anki opens |
+| `qt_style.py` | Qt styling: pop-up menus, the Browser table and sidebar, default buttons in Add and Preferences |
+| `web/editor.css`, `web/editor.js` | The note editor in Add, Edit and the Browser, including the stock-Arial swap inside fields |
 | `ai_panel.py` | The Ask AI dock: card context, per-card conversation, model choice, shortcut pausing |
 | `providers.py` | Finds and runs each model: Codex, Gemini CLI, Ollama |
 | `claude_cli.py` | Streams one reply from Claude Code with tools off |
