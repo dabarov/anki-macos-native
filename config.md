@@ -2,7 +2,7 @@
 
 **motion**: `true` lets screens settle in with a soft spring and buttons press in when clicked. `false` turns entrance motion off. Motion also turns itself off when macOS "Reduce motion" or Anki's own "Reduce motion" setting is on.
 
-**card_font**: `"system"` shows cards that still use Anki's stock Arial in the macOS system font, so they match the rest of the window. This is display only: your note types aren't changed, and cards with a font you chose keep it. Use `"template"` to show exactly what the card's CSS says.
+**card_font**: `"system"` shows cards and editor fields that still use Anki's stock Arial in the macOS system font, so they match the rest of the window. This is display only: your note types aren't changed, and cards with a font you chose keep it. Use `"template"` to show exactly what the card's CSS says.
 
 **Ask AI panel.** Pick the model from the panel's title. These settings only fine-tune it:
 

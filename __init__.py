@@ -13,6 +13,7 @@ import os
 import re
 import subprocess
 import sys
+import urllib.parse
 
 from aqt import gui_hooks, mw
 
@@ -31,6 +32,7 @@ SCREENS = {
     "Reviewer": "reviewer",
     "ReviewerBottomBar": "reviewer-bar",
     "AIPanel": "ai",
+    "Editor": "editor",
 }
 
 # macOS accent colours (NSColor.controlAccentColor), light / dark.
@@ -90,11 +92,16 @@ def on_webview_will_set_content(web_content, context) -> None:
     if screen == "ai":
         web_content.css.append(f"{base}/ai-panel.css")
         web_content.js.append(f"{base}/ai-panel.js")
+    elif screen == "editor":
+        web_content.css.append(f"{base}/editor.css")
+        query = urllib.parse.urlencode({"light": light, "dark": dark, "font": cfg.get("card_font", "system")})
+        web_content.js.append(f"{base}/editor.js?{query}")
     # Set before <body> is parsed so the first paint is already themed.
     web_content.head += (
         "<script>"
         f"document.documentElement.dataset.mn={json.dumps(screen)};"
         f"document.documentElement.dataset.mnMotion={json.dumps('on' if cfg.get('motion', True) else 'off')};"
+        f"document.documentElement.dataset.mnCardFont={json.dumps(cfg.get('card_font', 'system'))};"
         "</script>"
         f"<style>:root{{--mn-accent-light:{light};--mn-accent-dark:{dark};}}</style>"
     )

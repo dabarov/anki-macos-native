@@ -1,0 +1,97 @@
+/*
+ * The note editor (Add, Edit and the Browser's right-hand pane).
+ * Uses the tokens from macos.css. The fields themselves are shadow DOM;
+ * editor.js handles the one thing that lives inside them (the stock font).
+ */
+
+:root[data-mn="editor"] body {
+  background: var(--mn-window);
+}
+
+/* ── Toolbar: borderless toolbar buttons, grouped by spacing ───── */
+
+:root[data-mn="editor"] .editor-toolbar {
+  padding: 6px 8px 7px;
+  border-bottom: 0.5px solid var(--mn-separator);
+}
+:root[data-mn="editor"] .button-toolbar {
+  gap: 10px;
+}
+:root[data-mn="editor"] .button-group {
+  gap: 1px;
+  box-shadow: none;
+}
+:root[data-mn="editor"] .button-group-item {
+  --border-left-radius: 6px !important;
+  --border-right-radius: 6px !important;
+}
+:root[data-mn="editor"] .button-toolbar button,
+:root[data-mn="editor"] .button-toolbar .label-button,
+:root[data-mn="editor"] .button-toolbar .icon-button {
+  min-height: 26px;
+  font-family: var(--mn-font);
+  font-size: 13px;
+  letter-spacing: -0.006em;
+  color: var(--mn-label);
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  cursor: default;
+}
+:root[data-mn="editor"] .button-toolbar button:hover:not([disabled]) {
+  background: var(--mn-fill) !important;
+}
+:root[data-mn="editor"] .button-toolbar button:active:not([disabled]) {
+  background: var(--mn-fill-strong) !important;
+}
+:root[data-mn="editor"] .button-toolbar button[disabled] {
+  opacity: 0.35;
+}
+:root[data-mn="editor"] .button-toolbar button.active,
+:root[data-mn="editor"] .button-toolbar button[aria-pressed="true"] {
+  color: var(--mn-accent);
+  background: color-mix(in srgb, var(--mn-accent) 14%, transparent) !important;
+}
+
+/* ── Fields: caption labels over rounded, quiet text boxes ─────── */
+
+:root[data-mn="editor"] .field-container {
+  margin-bottom: 4px;
+}
+:root[data-mn="editor"] .label-name {
+  font-family: var(--mn-font);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--mn-secondary);
+}
+:root[data-mn="editor"] .collapse-badge,
+:root[data-mn="editor"] .plain-text-badge {
+  color: var(--mn-tertiary);
+}
+
+:root[data-mn="editor"] .editing-area {
+  background: var(--mn-control);
+  border: 0.5px solid var(--mn-control-border) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--mn-shadow-sm);
+  transition: box-shadow 160ms ease-out;
+}
+:root[data-mn="editor"] .editing-area:focus-within {
+  border-color: transparent !important;
+  box-shadow: 0 0 0 3.5px var(--mn-focus);
+  outline: none;
+}
+
+/* Tag editor sits in the same kind of box. */
+:root[data-mn="editor"] .tag-editor {
+  background: var(--mn-control);
+  border: 0.5px solid var(--mn-control-border) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--mn-shadow-sm);
+}
+:root[data-mn="editor"] .tag-editor:focus-within {
+  border-color: transparent !important;
+  box-shadow: 0 0 0 3.5px var(--mn-focus);
+}
