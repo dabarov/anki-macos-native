@@ -1,0 +1,12 @@
+# Written by Anki on each machine: your config edits, add-on state.
+meta.json
+
+# Per-machine working files (the Ask Claude panel's empty work folder).
+user_files/*
+!user_files/README.txt
+
+# Build output and Python caches.
+dist/
+__pycache__/
+*.pyc
+.DS_Store
