@@ -1,6 +1,7 @@
-"""Qt parts of Anki: pop-up menus, list and text boxes in every dialog, the
-Browser's table and sidebar, the card preview's button bar, the card template
-editor, and default buttons in the Add and Preferences windows.
+"""Qt parts of Anki: pop-up menus, list and text boxes in every dialog, text
+fields in dark mode, the Browser's table and sidebar, the card preview's button
+bar, the card template editor, the sync sign-in dialog, and default buttons in
+the Add and Preferences windows.
 
 Controls such as buttons, pop-up buttons and checkboxes are left to the
 native macOS style, which already draws them as Tahoe controls. These rules
@@ -36,10 +37,33 @@ def _palette(dark: bool) -> dict:
     }
 
 
+def _dark_fields(p: dict, accent: str) -> str:
+    """Qt's native dark style draws text fields flat and square, unlike the
+    rounded ones in light mode; match light mode's shape in dark."""
+    return f"""
+QLineEdit {{
+    background: palette(base);
+    border: 1px solid {p["border"]};
+    border-radius: 6px;
+    padding: 3px 6px;
+}}
+QLineEdit:focus {{
+    border: 1px solid {accent};
+}}
+QComboBox QLineEdit, QAbstractSpinBox QLineEdit {{
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+}}
+"""
+
+
 def stylesheet(dark: bool, accent: str) -> str:
     p = _palette(dark)
     return f"""
 {MARK}
+{_dark_fields(p, accent) if dark else ""}
 QMenu {{
     background-color: {p["menu"]};
     border: 1px solid {p["border"]};
@@ -300,6 +324,38 @@ def _patch_find_duplicates() -> None:
     find_duplicates.FindDuplicatesDialog.__init__ = init
 
 
+def _patch_sync_labels(accent: Callable[[], tuple[str, str]]) -> None:
+    """The AnkiWeb sign-in dialog puts an <h1> in a label; show it as a
+    dialog title instead, and draw links in the accent colour."""
+    import re
+
+    from aqt import sync
+    from aqt.qt import QLabel
+
+    def soften(text: str) -> str:
+        from aqt.theme import theme_manager
+
+        light, dark = accent()
+        color = dark if theme_manager.night_mode else light
+        text = re.sub(
+            r"(?is)<h1[^>]*>(.*?)</h1>",
+            r'<p style="font-size:15px; font-weight:600; margin:0 0 4px 0;">\1</p>',
+            text,
+        )
+        return re.sub(r"(?i)<a\s", f'<a style="color:{color}; text-decoration:none;" ', text)
+
+    class SyncLabel(QLabel):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            if args and isinstance(args[0], str):
+                super().setText(soften(args[0]))
+
+        def setText(self, text):  # noqa: N802 (Qt name)
+            super().setText(soften(text))
+
+    sync.QLabel = SyncLabel
+
+
 def _add_cards_opened(addcards) -> None:
     """Add is the window's main action, so draw it as the default button."""
     addcards.addButton.setDefault(True)
@@ -356,6 +412,7 @@ def setup(accent: Callable[[], tuple[str, str]]) -> None:
     _patch_preferences()
     _patch_previewer()
     _patch_find_duplicates()
+    _patch_sync_labels(accent)
 
     def reapply() -> None:
         from aqt.theme import theme_manager
