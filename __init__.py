@@ -125,6 +125,37 @@ def on_card_will_show(text: str, card, kind: str) -> str:
 
 gui_hooks.card_will_show.append(on_card_will_show)
 
+
+# Svelte pages (deck Options, Card Info, Change Notetype, …) don't go through
+# webview_will_set_content, so their styles are added once Anki has injected
+# its own.
+def on_page_styled(webview) -> None:
+    light, dark = _accent()
+    base = f"/_addons/{ADDON}/web"
+    webview.eval(
+        "(function(){var d=document.documentElement;"
+        "if(d.dataset.mn)return;"
+        "d.dataset.mn='page';"
+        f"d.style.setProperty('--mn-accent-light',{json.dumps(light)});"
+        f"d.style.setProperty('--mn-accent-dark',{json.dumps(dark)});"
+        f"[{json.dumps(base + '/macos.css')},{json.dumps(base + '/pages.css')}].forEach(function(h){{"
+        "var l=document.createElement('link');l.rel='stylesheet';l.href=h;document.head.appendChild(l);});"
+        "})()"
+    )
+
+
+gui_hooks.webview_did_inject_style_into_page.append(on_page_styled)
+
+# Pop-up menus (deck ⋯, review More, context menus).
+try:
+    from . import qt_style
+
+    qt_style.setup(_accent)
+except Exception:
+    import traceback
+
+    print("macOS Native: menu styling disabled\n" + traceback.format_exc())
+
 # "Ask AI" side panel. Kept isolated: if it fails, the theme still loads.
 try:
     from . import ai_panel

@@ -1,0 +1,204 @@
+/*
+ * Anki's Svelte pages (deck Options, Card Info, Change Notetype, …).
+ * They're built on Bootstrap; these rules restyle its stable class names
+ * with the tokens from macos.css. Scoped to :root[data-mn="page"], which
+ * the add-on sets when Anki injects page styles.
+ */
+
+:root[data-mn="page"] {
+  --bs-body-font-family: var(--mn-font);
+  --bs-body-font-size: 13px;
+  --bs-border-radius: 6px;
+}
+
+:root[data-mn="page"] body {
+  font-family: var(--mn-font);
+  font-size: 13px;
+  letter-spacing: -0.006em;
+  color: var(--mn-label);
+  background: var(--mn-window);
+}
+
+/* ── Sections: grouped boxes like System Settings ───────────── */
+
+/* Titled sections only; .container-sm is the page wrapper and header. */
+:root[data-mn="page"] .container:not(.container-sm) {
+  background: var(--mn-group);
+  border: 0.5px solid var(--mn-group-border);
+  border-radius: 12px;
+  box-shadow: var(--mn-shadow-sm);
+}
+:root[data-mn="page"] .container:not(.container-sm):hover {
+  box-shadow: var(--mn-shadow-sm);
+}
+:root[data-mn="page"] .container-sm {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+/* Preset / This deck / Today only: a segmented control */
+:root[data-mn="page"] .container ul:has(> li > button) {
+  display: flex;
+  gap: 2px;
+  margin: 4px 0 8px;
+  padding: 2px;
+  list-style: none;
+  background: var(--mn-fill);
+  border: 0;
+  border-radius: 7px;
+}
+:root[data-mn="page"] .container ul:has(> li > button) > li {
+  flex: 1;
+  margin: 0;
+  border: 0;
+}
+:root[data-mn="page"] .container ul:has(> li > button) > li::before,
+:root[data-mn="page"] .container ul:has(> li > button) > li::after,
+:root[data-mn="page"] .container ul:has(> li > button) > li > button::after {
+  display: none;
+}
+:root[data-mn="page"] .container ul:has(> li > button) > li > button {
+  width: 100%;
+  padding: 3px 8px;
+  font-size: 12px;
+  color: var(--mn-label);
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  box-shadow: none;
+}
+:root[data-mn="page"] .container ul:has(> li > button) > li.active > button {
+  font-weight: 500;
+  background: var(--mn-control);
+  box-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* Section titles: Title 3 instead of a 37px headline with a rule under it */
+:root[data-mn="page"] .container h1 {
+  margin-bottom: 6px;
+  padding-bottom: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  border: 0;
+}
+
+:root[data-mn="page"] .setting-title,
+:root[data-mn="page"] .col-form-label,
+:root[data-mn="page"] label {
+  font-size: 13px;
+  letter-spacing: -0.006em;
+}
+
+/* ── Header bar: glass, with a hairline instead of a heavy border ─ */
+
+:root[data-mn="page"] .sticky-container {
+  background: var(--mn-glass);
+  backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 0.5px solid var(--mn-separator);
+  box-shadow: none;
+}
+
+/* ── Controls ───────────────────────────────────────────────── */
+
+:root[data-mn="page"] .form-control,
+:root[data-mn="page"] .container input[type="text"],
+:root[data-mn="page"] .container input:not([type]),
+:root[data-mn="page"] .spin-box,
+:root[data-mn="page"] .select-container {
+  font-size: 13px;
+  color: var(--mn-label);
+  background-color: var(--mn-control);
+  border: 0.5px solid var(--mn-control-border);
+  border-radius: 6px;
+  box-shadow: var(--mn-shadow-sm);
+}
+:root[data-mn="page"] .spin-box .form-control,
+:root[data-mn="page"] .spin-box input {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+:root[data-mn="page"] .form-control:focus,
+:root[data-mn="page"] .container input[type="text"]:focus,
+:root[data-mn="page"] .container input:not([type]):focus,
+:root[data-mn="page"] .spin-box:focus-within,
+:root[data-mn="page"] .select-container:focus-within {
+  border-color: transparent;
+  box-shadow: 0 0 0 3.5px var(--mn-focus);
+  outline: none;
+}
+
+/* Switches: a macOS toggle — grey track, white knob, accent when on */
+:root[data-mn="page"] .form-switch .form-check-input {
+  width: 32px;
+  height: 18px;
+  margin-top: 0;
+  cursor: default;
+  background-color: var(--mn-fill-strong);
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'><circle r='3.2' fill='white' stroke='rgba(0,0,0,0.18)' stroke-width='0.25'/></svg>");
+  border: 0;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+  transition: background-position var(--mn-snap-dur) var(--mn-snap), background-color 160ms ease-out;
+}
+:root[data-mn="page"] .form-switch .form-check-input:checked {
+  background-color: var(--mn-accent);
+}
+:root[data-mn="page"] .form-switch .form-check-input:focus {
+  box-shadow: 0 0 0 3.5px var(--mn-focus);
+}
+
+/* Buttons */
+:root[data-mn="page"] .btn {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--mn-label);
+  background: var(--mn-control);
+  border: 0.5px solid var(--mn-control-border);
+  box-shadow: var(--mn-shadow-sm);
+}
+:root[data-mn="page"] .btn:active {
+  transform: scale(0.97);
+}
+:root[data-mn="page"] .btn-primary,
+:root[data-mn="page"] .btn-primary:hover,
+:root[data-mn="page"] .btn-primary:focus {
+  font-weight: 600;
+  color: var(--mn-on-accent);
+  background: var(--mn-accent);
+  border-color: transparent;
+}
+:root[data-mn="page"] .btn-primary:hover {
+  background: color-mix(in srgb, var(--mn-accent) 92%, #fff);
+}
+
+/* Help "?" badges: quiet until you need them */
+:root[data-mn="page"] .badge {
+  color: var(--mn-tertiary);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+:root[data-mn="page"] .badge svg {
+  fill: currentColor;
+}
+:root[data-mn="page"] .badge:hover {
+  color: var(--mn-secondary);
+}
+
+:root[data-mn="page"] a {
+  color: var(--mn-accent);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-mn="page"] .sticky-container {
+    background: var(--mn-window);
+    backdrop-filter: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-mn="page"] .form-switch .form-check-input { transition: none; }
+  :root[data-mn="page"] .btn:active { transform: none; }
+}
