@@ -1,0 +1,862 @@
+/*
+ * macOS Native for Anki
+ * ---------------------------------------------------------------
+ * Every rule is scoped to :root[data-mn="<screen>"], which the add-on
+ * sets only on Anki's own main-window pages. Card styling belongs to your
+ * note types; the only exception is the stock-Arial swap in __init__.py.
+ *
+ * Screens: toolbar · decks · overview · bottombar · reviewer · reviewer-bar
+ */
+
+/* ── Tokens ─────────────────────────────────────────────────── */
+
+/*
+ * Type scale (macOS text styles), used everywhere, the panel included:
+ *   Large Title 26/700 · Title 1 22/600 · Title 3 15/600 · Headline 13/600
+ *   Body 13/400 · Callout 12/400 · Caption 11/500
+ * Tracking is per size, as SF's own table: 11px +0.006em · 12px 0 ·
+ * 13px −0.006em · 15px −0.015em · 22px −0.01em · 26px −0.016em.
+ * Controls are Regular (400). Text on glass gets 500 for vibrancy, and
+ * prominent/tinted actions get 600.
+ */
+:root[data-mn] {
+  --mn-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+
+  --mn-accent: var(--mn-accent-light, #007aff);
+  --mn-on-accent: #fff;
+  --mn-focus: color-mix(in srgb, var(--mn-accent) 42%, transparent);
+
+  /* Window + label colours, matched to NSColor in light appearance.
+     The window colour stays on Anki's canvas so page loads never flash. */
+  --mn-window: #f5f5f5;
+  --mn-label: rgba(0, 0, 0, 0.85);
+  --mn-secondary: rgba(0, 0, 0, 0.5);
+  --mn-tertiary: rgba(0, 0, 0, 0.26);
+  --mn-separator: rgba(0, 0, 0, 0.09);
+
+  --mn-fill: rgba(0, 0, 0, 0.045);         /* hover */
+  --mn-fill-strong: rgba(0, 0, 0, 0.085);  /* pressed */
+
+  /* Grouped content (System Settings–style sections) */
+  --mn-group: #fff;
+  --mn-group-border: rgba(0, 0, 0, 0.06);
+
+  /* Controls */
+  --mn-control: #fff;
+  --mn-control-hover: #fbfbfb;
+  --mn-control-pressed: #ececec;
+  --mn-control-border: rgba(0, 0, 0, 0.1);
+
+  /* Glass: light material for the floating toolbar */
+  --mn-glass: rgba(255, 255, 255, 0.74);
+  --mn-glass-edge: rgba(255, 255, 255, 0.95);
+  --mn-glass-border: rgba(0, 0, 0, 0.08);
+
+  --mn-shadow-sm: 0 0.5px 1px rgba(0, 0, 0, 0.1), 0 1px 2.5px rgba(0, 0, 0, 0.06);
+  --mn-shadow-md: 0 0.5px 1px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.07);
+  /* The toolbar lives in its own short webview: its shadow must fit inside
+     the header's bottom padding (offset + blur ≤ 8px) or it gets cut off. */
+  --mn-shadow-toolbar: 0 0.5px 1px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.06);
+
+  /* System colours, darkened a touch where they carry text on white */
+  --mn-blue: #0a6cf0;
+  --mn-red: #e5372c;
+  --mn-orange: #e07a00;
+  --mn-green: #1f9a3a;
+
+  /* Springs, sampled from Apple's damping/response model.
+     Critically damped (damping 1.0) — no overshoot, per the HIG default.
+     response 0.35s → settles in ~470ms; response 0.25s → ~340ms. */
+  --mn-spring: linear(0, 0.0494, 0.1579, 0.286, 0.4124, 0.5268, 0.6251, 0.7068, 0.7731,
+    0.8258, 0.8673, 0.8995, 0.9243, 0.9432, 0.9576, 0.9684, 0.9766, 0.9827, 0.9872,
+    0.9906, 0.9931, 0.9949, 0.9963, 0.9973, 1);
+  --mn-spring-dur: 470ms;
+  --mn-snap: linear(0, 0.0992, 0.2858, 0.4712, 0.6248, 0.7415, 0.8257, 0.8843, 0.9242,
+    0.9508, 0.9684, 0.9798, 0.9872, 0.9919, 0.9949, 0.9968, 1);
+  --mn-snap-dur: 340ms;
+
+  accent-color: var(--mn-accent);
+}
+
+:root.night-mode[data-mn],
+:root[data-mn] body.nightMode {
+  --mn-accent: var(--mn-accent-dark, #0a84ff);
+  --mn-focus: color-mix(in srgb, var(--mn-accent) 55%, transparent);
+
+  --mn-window: #2c2c2c;
+  --mn-label: rgba(255, 255, 255, 0.86);
+  --mn-secondary: rgba(255, 255, 255, 0.55);
+  --mn-tertiary: rgba(255, 255, 255, 0.25);
+  --mn-separator: rgba(255, 255, 255, 0.1);
+
+  --mn-fill: rgba(255, 255, 255, 0.06);
+  --mn-fill-strong: rgba(255, 255, 255, 0.11);
+
+  --mn-group: rgba(255, 255, 255, 0.045);
+  --mn-group-border: rgba(255, 255, 255, 0.07);
+
+  --mn-control: rgba(255, 255, 255, 0.12);
+  --mn-control-hover: rgba(255, 255, 255, 0.16);
+  --mn-control-pressed: rgba(255, 255, 255, 0.22);
+  --mn-control-border: rgba(255, 255, 255, 0.06);
+
+  --mn-glass: rgba(58, 58, 58, 0.72);
+  --mn-glass-edge: rgba(255, 255, 255, 0.12);
+  --mn-glass-border: rgba(0, 0, 0, 0.35);
+
+  --mn-shadow-sm: 0 0.5px 1px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2);
+  --mn-shadow-md: 0 0.5px 1px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.28);
+  --mn-shadow-toolbar: 0 0.5px 1px rgba(0, 0, 0, 0.35), 0 1px 4px rgba(0, 0, 0, 0.22);
+
+  --mn-blue: #0a84ff;
+  --mn-red: #ff453a;
+  --mn-orange: #ff9f0a;
+  --mn-green: #32d74b;
+}
+
+/* ── Shared chrome (every screen except the card itself) ───── */
+
+:root[data-mn]:not([data-mn="reviewer"]) body {
+  font-family: var(--mn-font);
+  font-size: 13px;
+  line-height: 1.35;
+  letter-spacing: -0.006em; /* SF at 13pt tracks slightly tight */
+  color: var(--mn-label);
+  background: var(--mn-window);
+  /* No -webkit-font-smoothing override: the default matches AppKit text
+     and the card, which can't be overridden without touching templates. */
+}
+
+:root[data-mn] ::selection {
+  background: color-mix(in srgb, var(--mn-accent) 28%, transparent);
+}
+
+/* Push buttons: capsule, hairline edge, presses in on pointer-down. */
+:root[data-mn]:not([data-mn="reviewer"]) button {
+  box-sizing: border-box;
+  height: 28px;
+  padding: 0 14px;
+  margin: 0 4px;
+  font: 400 13px/1 var(--mn-font); /* NSButton: system 13 Regular */
+  letter-spacing: -0.006em;
+  color: var(--mn-label);
+  background: var(--mn-control);
+  border: 0.5px solid var(--mn-control-border);
+  border-radius: 999px;
+  box-shadow: var(--mn-shadow-sm);
+  cursor: default; /* macOS controls use the arrow cursor */
+  outline: none;
+  /* Release springs back; see :active for the press. */
+  transition:
+    transform var(--mn-snap-dur) var(--mn-snap),
+    background-color 160ms ease-out,
+    box-shadow 160ms ease-out;
+}
+
+:root[data-mn]:not([data-mn="reviewer"]) button:hover {
+  background: var(--mn-control-hover);
+  border-color: var(--mn-control-border);
+}
+
+/* Feedback lives on the press, and it's instant. */
+:root[data-mn]:not([data-mn="reviewer"]) button:active {
+  transform: scale(0.97);
+  background: var(--mn-control-pressed);
+  box-shadow: none;
+  transition-duration: 70ms;
+  transition-timing-function: ease-out;
+}
+
+:root[data-mn]:not([data-mn="reviewer"]) button:focus-visible {
+  box-shadow: 0 0 0 3.5px var(--mn-focus);
+}
+
+:root[data-mn]:not([data-mn="reviewer"]) button[disabled],
+:root[data-mn]:not([data-mn="reviewer"]) button[disabled]:hover {
+  color: var(--mn-tertiary);
+  background: var(--mn-control);
+  box-shadow: none;
+  transform: none;
+}
+
+/* Prominent (default) buttons: filled with the system accent. */
+:root[data-mn] #study,
+:root[data-mn] #ansbut {
+  font-weight: 600;
+  color: var(--mn-on-accent);
+  background: var(--mn-accent);
+  border-color: transparent;
+  box-shadow:
+    0 0.5px 1px rgba(0, 0, 0, 0.14),
+    0 3px 10px color-mix(in srgb, var(--mn-accent) 28%, transparent);
+}
+:root[data-mn] #study:hover,
+:root[data-mn] #ansbut:hover {
+  background: color-mix(in srgb, var(--mn-accent) 92%, #fff);
+}
+:root[data-mn] #study:active,
+:root[data-mn] #ansbut:active {
+  background: color-mix(in srgb, var(--mn-accent) 86%, #000);
+  box-shadow: none;
+}
+/* Anki focuses the default button so Space/Return trigger it. Like an
+   AppKit default button, its fill already says so — no extra ring. */
+:root[data-mn] #study:focus,
+:root[data-mn] #study:focus-visible,
+:root[data-mn] #ansbut:focus,
+:root[data-mn] #ansbut:focus-visible {
+  box-shadow:
+    0 0.5px 1px rgba(0, 0, 0, 0.14),
+    0 3px 10px color-mix(in srgb, var(--mn-accent) 28%, transparent);
+}
+
+/* Scroll-edge effect instead of hard dividers: content fades where it
+   meets the toolbar above and the bottom bar below. */
+:root[data-mn="decks"] body::before,
+:root[data-mn="decks"] body::after,
+:root[data-mn="overview"] body::before,
+:root[data-mn="overview"] body::after {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  height: 14px;
+  pointer-events: none;
+  z-index: 10;
+}
+:root[data-mn="decks"] body::before,
+:root[data-mn="overview"] body::before {
+  top: 0;
+  background: linear-gradient(var(--mn-window), transparent);
+}
+:root[data-mn="decks"] body::after,
+:root[data-mn="overview"] body::after {
+  bottom: 0;
+  background: linear-gradient(transparent, var(--mn-window));
+}
+
+/* ── Top toolbar: one floating glass capsule ────────────────── */
+
+:root[data-mn="toolbar"] body {
+  background: var(--mn-window);
+}
+
+:root[data-mn="toolbar"] body .header {
+  padding: 8px 10px 8px;
+  border-bottom: none;
+}
+
+:root[data-mn="toolbar"] body .header .toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  overflow: visible;
+  border-radius: 999px;
+  background: var(--mn-glass);
+  border: 0.5px solid var(--mn-glass-border);
+  /* bright top edge = light catching the material */
+  box-shadow: inset 0 0.5px 0 var(--mn-glass-edge), var(--mn-shadow-toolbar);
+  backdrop-filter: blur(24px) saturate(180%);
+}
+:root[data-mn="toolbar"] body .header .toolbar:hover {
+  box-shadow: inset 0 0.5px 0 var(--mn-glass-edge), var(--mn-shadow-toolbar);
+}
+
+:root[data-mn="toolbar"] body .toolbar .hitem,
+:root[data-mn="toolbar"] body .toolbar .hitem:first-child,
+:root[data-mn="toolbar"] body .toolbar .hitem:last-child {
+  padding: 5px 13px;
+  font: 500 13px/18px var(--mn-font); /* 500: legibility on glass */
+  letter-spacing: -0.006em;
+  color: var(--mn-label);
+  text-decoration: none;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: none;
+  cursor: default;
+  transition:
+    transform var(--mn-snap-dur) var(--mn-snap),
+    background-color 140ms ease-out;
+}
+:root[data-mn="toolbar"] body .toolbar .hitem:hover {
+  background: var(--mn-fill);
+  border: 0;
+  text-decoration: none;
+}
+:root[data-mn="toolbar"] body .toolbar .hitem:active {
+  background: var(--mn-fill-strong);
+  transform: scale(0.96);
+  transition-duration: 70ms;
+  transition-timing-function: ease-out;
+}
+/* A toolbar button whose panel is open (Ask Claude) stays lit, like a
+   selected toggle in an NSToolbar. */
+:root[data-mn="toolbar"] body .toolbar .hitem.mn-active,
+:root[data-mn="toolbar"] body .toolbar .hitem.mn-active:hover {
+  color: var(--mn-accent);
+  background: color-mix(in srgb, var(--mn-accent) 14%, transparent);
+}
+:root[data-mn="toolbar"] body .toolbar .hitem:focus-visible {
+  box-shadow: 0 0 0 3px var(--mn-focus);
+}
+
+/* ── Deck list: an inset grouped list ───────────────────────── */
+
+:root[data-mn="decks"] body {
+  margin: 0;
+  padding: 22px 24px 40px;
+}
+
+:root[data-mn="decks"] center > table {
+  box-sizing: border-box;
+  width: min(680px, 100%);
+  padding: 6px;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--mn-group);
+  border: 0.5px solid var(--mn-group-border);
+  border-radius: 14px;
+  box-shadow: var(--mn-shadow-sm);
+}
+:root[data-mn="decks"] center > table:hover {
+  box-shadow: var(--mn-shadow-sm);
+}
+
+/* Column headers: small, secondary, never shouting. */
+:root[data-mn="decks"] center > table th {
+  padding: 7px 10px 8px;
+  font: 500 11px/1 var(--mn-font);
+  letter-spacing: 0.006em;
+  color: var(--mn-secondary);
+  border-bottom: none;
+}
+:root[data-mn="decks"] center > table th.count {
+  min-width: 3.6em;
+  text-align: end;
+}
+
+:root[data-mn="decks"] tr.deck td,
+:root[data-mn="decks"] body.fancy tr.deck td {
+  height: 30px;
+  padding: 0 10px;
+  border: none;
+  transition: background-color 160ms ease-out;
+}
+
+/* Row shape: rounded ends, like a source list selection. */
+:root[data-mn="decks"] tr.deck td:first-child {
+  border-radius: 8px 0 0 8px;
+}
+:root[data-mn="decks"] tr.deck td:last-child {
+  border-radius: 0 8px 8px 0;
+}
+:root[data-mn="decks"][dir="rtl"] tr.deck td:first-child,
+:root[data-mn="decks"] [dir="rtl"] tr.deck td:first-child {
+  border-radius: 0 8px 8px 0;
+}
+:root[data-mn="decks"][dir="rtl"] tr.deck td:last-child,
+:root[data-mn="decks"] [dir="rtl"] tr.deck td:last-child {
+  border-radius: 8px 0 0 8px;
+}
+
+:root[data-mn="decks"] tr.deck td,
+:root[data-mn="decks"] body.fancy tr.deck td {
+  background: transparent;
+}
+:root[data-mn="decks"] tr.deck:hover td,
+:root[data-mn="decks"] body.fancy tr.deck:hover td {
+  background: var(--mn-fill);
+  transition-duration: 0ms; /* hover in is immediate; out fades */
+}
+:root[data-mn="decks"] tr.deck.current td,
+:root[data-mn="decks"] body.fancy tr.deck.current td {
+  background: color-mix(in srgb, var(--mn-accent) 14%, transparent);
+}
+:root[data-mn="decks"] tr.deck.current:hover td,
+:root[data-mn="decks"] body.fancy tr.deck.current:hover td {
+  background: color-mix(in srgb, var(--mn-accent) 19%, transparent);
+}
+:root[data-mn="decks"] tr.deck:active td,
+:root[data-mn="decks"] body.fancy tr.deck:active td {
+  background: var(--mn-fill-strong);
+  transition-duration: 0ms;
+}
+
+/* Drag & drop: accent insertion line, as in Finder and Mail. */
+:root[data-mn="decks"] tr.drag-hover td {
+  box-shadow: inset 0 -2px 0 var(--mn-accent);
+}
+:root[data-mn="decks"] tr.top-level-drag-row td {
+  height: 6px;
+  padding: 0;
+  font-size: 0;
+  line-height: 0;
+  border: none;
+  background: transparent;
+}
+
+:root[data-mn="decks"] .decktd {
+  max-width: calc(100vw - 280px);
+  text-overflow: ellipsis;
+}
+
+:root[data-mn="decks"] a.deck,
+:root[data-mn="decks"] a.deck:hover {
+  padding: 6px 2px;
+  color: var(--mn-label);
+  font-weight: 400;
+  text-decoration: none;
+}
+/* The accent tint marks the current deck; a light weight bump only, so the
+   name doesn't jump in width when the current deck changes. */
+:root[data-mn="decks"] tr.current a.deck {
+  font-weight: 500;
+}
+:root[data-mn="decks"] a.deck.filtered {
+  color: var(--mn-accent) !important;
+}
+
+/* Disclosure triangle → SF-style chevron (state set by macos.js). */
+:root[data-mn="decks"] .collapse {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-inline-end: 4px;
+  vertical-align: -3px;
+  font-size: 0;
+  color: var(--mn-secondary);
+  text-decoration: none;
+  border-radius: 4px;
+}
+:root[data-mn="decks"] a.collapse:hover {
+  color: var(--mn-label);
+}
+:root[data-mn="decks"] a.collapse::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M3.6 1.6 7 5 3.6 8.4' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>") center / contain no-repeat;
+  transform: rotate(90deg);
+}
+:root[data-mn="decks"] a.collapse[data-mn-state="collapsed"]::before {
+  transform: none;
+}
+:root[data-mn="decks"][dir="rtl"] a.collapse[data-mn-state="collapsed"]::before,
+:root[data-mn="decks"] [dir="rtl"] a.collapse[data-mn-state="collapsed"]::before {
+  transform: scaleX(-1);
+}
+
+/* Counts: tabular so columns line up, colour carries meaning. */
+:root[data-mn="decks"] tr.deck td[align="end"] {
+  min-width: 3.6em;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+:root[data-mn] .new-count { color: var(--mn-blue); }
+:root[data-mn] .learn-count { color: var(--mn-red); }
+:root[data-mn] .review-count { color: var(--mn-green); }
+:root[data-mn] .zero-count { color: var(--mn-tertiary); }
+:root[data-mn] .bury-count {
+  color: var(--mn-secondary);
+  font-weight: 500;
+}
+
+/* Deck options: gear → "ellipsis.circle" that appears on hover. */
+:root[data-mn="decks"] td.opts {
+  width: 26px;
+  padding: 0 4px 0 0;
+}
+:root[data-mn="decks"] td.opts a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  vertical-align: middle;
+  color: var(--mn-secondary);
+  border-radius: 999px;
+  opacity: 0;
+  cursor: default;
+  transition:
+    opacity 160ms ease-out,
+    transform var(--mn-snap-dur) var(--mn-snap),
+    background-color 140ms ease-out;
+}
+:root[data-mn="decks"] td.opts a::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='8' cy='8' r='6.6' fill='none' stroke='black' stroke-width='1.25'/><circle cx='5.1' cy='8' r='1'/><circle cx='8' cy='8' r='1'/><circle cx='10.9' cy='8' r='1'/></svg>") center / contain no-repeat;
+}
+:root[data-mn="decks"] td.opts img.gears {
+  display: none;
+}
+:root[data-mn="decks"] tr.deck:hover td.opts a,
+:root[data-mn="decks"] tr.deck.current td.opts a {
+  opacity: 1;
+  transition-duration: 0ms, var(--mn-snap-dur), 140ms;
+}
+:root[data-mn="decks"] td.opts a:hover {
+  color: var(--mn-label);
+  background: var(--mn-fill-strong);
+}
+:root[data-mn="decks"] td.opts a:active {
+  transform: scale(0.9);
+  transition-duration: 0ms, 70ms, 0ms;
+}
+
+:root[data-mn="decks"] #studiedToday {
+  margin: 18px 0 0;
+  font-size: 12px;
+  letter-spacing: 0;
+  color: var(--mn-secondary);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+:root[data-mn="decks"] .callout {
+  max-width: 560px;
+  margin: 16px auto;
+  padding: 14px 16px;
+  background: var(--mn-group);
+  border: 0.5px solid var(--mn-group-border);
+  border-radius: 14px;
+  box-shadow: var(--mn-shadow-sm);
+}
+
+/* ── Deck overview: large title, count tiles, one clear action ─ */
+
+:root[data-mn="overview"] body {
+  margin: 0;
+  padding: 34px 24px 40px;
+}
+
+:root[data-mn="overview"] h3 {
+  margin: 0 0 22px;
+  font: 700 26px/1.12 var(--mn-font);
+  letter-spacing: -0.016em; /* tighten as type grows */
+  color: var(--mn-label);
+}
+
+/* Outer two-cell table → a centred column: tiles, then the button. */
+:root[data-mn="overview"] center > table {
+  display: block;
+  width: auto;
+}
+:root[data-mn="overview"] center > table > tbody {
+  display: block;
+}
+:root[data-mn="overview"] center > table > tbody > tr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+:root[data-mn="overview"] center > table > tbody > tr > td {
+  display: block;
+  padding: 0;
+}
+
+/* Inner table: each row becomes a tile (value over label). */
+:root[data-mn="overview"] center table table {
+  display: block;
+  border-spacing: 0;
+}
+:root[data-mn="overview"] center table table > tbody {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+:root[data-mn="overview"] center table table tr {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 104px;
+  padding: 14px 18px 12px;
+  background: var(--mn-group);
+  border: 0.5px solid var(--mn-group-border);
+  border-radius: 14px;
+  box-shadow: var(--mn-shadow-sm);
+}
+:root[data-mn="overview"] center table table td {
+  display: block;
+  padding: 0;
+}
+:root[data-mn="overview"] center table table td:first-child {
+  font: 400 12px/1.2 var(--mn-font);
+  letter-spacing: 0;
+  color: var(--mn-secondary);
+}
+/* Title 1 — one step below the deck's Large Title. */
+:root[data-mn="overview"] center table table td:last-child b {
+  font: 600 22px/1 var(--mn-font);
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+:root[data-mn="overview"] center table table .mn-zero {
+  color: var(--mn-tertiary);
+}
+:root[data-mn="overview"] center table table .bury-count {
+  margin-inline-start: 3px;
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
+:root[data-mn="overview"] #study {
+  height: 34px;
+  min-width: 168px;
+  padding: 0 26px;
+}
+
+:root[data-mn="overview"] .descfont {
+  padding: 0;
+  margin-top: 30px;
+  color: var(--mn-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+:root[data-mn="overview"] .smallLink {
+  font-size: 11px;
+  letter-spacing: 0.006em;
+}
+:root[data-mn="overview"] .descmid {
+  width: min(560px, 92%);
+}
+:root[data-mn="overview"] a {
+  color: var(--mn-accent);
+}
+
+/* ── Bottom bars (deck list + overview) ─────────────────────── */
+
+:root[data-mn="bottombar"] body {
+  background: var(--mn-window);
+}
+:root[data-mn="bottombar"] #outer {
+  border-top: none;
+}
+:root[data-mn="bottombar"] #header {
+  padding: 6px 12px 12px;
+  border: none;
+}
+
+/* ── Review bottom bar ──────────────────────────────────────── */
+
+/* Room above for the count / interval labels that float over the buttons,
+   and a matching margin below so the row doesn't sit on the window edge. */
+:root[data-mn="reviewer-bar"] #outer,
+:root[data-mn="reviewer-bar"] body.nightMode #outer {
+  padding: 18px 0 6px;
+  border-top: 0.5px solid var(--mn-separator);
+}
+
+/* Equal side columns so the centre buttons sit on the window's axis. */
+:root[data-mn="reviewer-bar"] td.stat {
+  width: 120px;
+}
+
+/* Edit / More: borderless toolbar buttons — secondary, not competing. */
+:root[data-mn="reviewer-bar"] td.stat button {
+  margin: 9px 6px;
+  color: var(--mn-secondary);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+:root[data-mn="reviewer-bar"] td.stat button:hover {
+  color: var(--mn-label);
+  background: var(--mn-fill);
+}
+:root[data-mn="reviewer-bar"] td.stat button:active {
+  background: var(--mn-fill-strong);
+}
+
+:root[data-mn="reviewer-bar"] #ansbut {
+  height: 32px;
+  min-width: 220px;
+  padding: 0 24px;
+  font-weight: 600;
+}
+
+/* Answer buttons: tinted capsules — colour says which is which,
+   without four saturated fills fighting for attention. */
+:root[data-mn="reviewer-bar"] button[data-ease] {
+  --mn-tint: var(--mn-accent);
+  height: 32px;
+  min-width: 92px;
+  margin: 9px 5px;
+  padding: 0 16px;
+  font-weight: 600;
+  color: var(--mn-tint);
+  background: color-mix(in srgb, var(--mn-tint) 11%, var(--mn-control));
+  border-color: color-mix(in srgb, var(--mn-tint) 18%, transparent);
+}
+:root[data-mn="reviewer-bar"] button[data-ease="1"] { --mn-tint: var(--mn-red); }
+:root[data-mn="reviewer-bar"] button[data-ease="2"] { --mn-tint: var(--mn-orange); }
+:root[data-mn="reviewer-bar"] button[data-ease="3"] { --mn-tint: var(--mn-green); }
+:root[data-mn="reviewer-bar"] button[data-ease="4"] { --mn-tint: var(--mn-blue); }
+
+:root[data-mn="reviewer-bar"] button[data-ease]:hover {
+  background: color-mix(in srgb, var(--mn-tint) 17%, var(--mn-control));
+  border-color: color-mix(in srgb, var(--mn-tint) 26%, transparent);
+}
+:root[data-mn="reviewer-bar"] button[data-ease]:active {
+  background: color-mix(in srgb, var(--mn-tint) 25%, var(--mn-control));
+}
+:root[data-mn="reviewer-bar"] button[data-ease]:focus {
+  border-color: color-mix(in srgb, var(--mn-tint) 26%, transparent);
+}
+:root[data-mn="reviewer-bar"] button[data-ease]:focus-visible {
+  box-shadow: 0 0 0 3.5px color-mix(in srgb, var(--mn-tint) 38%, transparent);
+}
+
+/* Interval / remaining-count labels that sit above the buttons. */
+:root[data-mn="reviewer-bar"] .nobold,
+:root[data-mn="reviewer-bar"] .stattxt {
+  top: -9px; /* ≈8pt clear of the button, ≈12pt below the divider */
+  font: 500 11px/1 var(--mn-font);
+  letter-spacing: 0.006em;
+  color: var(--mn-secondary);
+  font-variant-numeric: tabular-nums;
+}
+:root[data-mn="reviewer-bar"] .stattxt .new-count,
+:root[data-mn="reviewer-bar"] .stattxt .learn-count,
+:root[data-mn="reviewer-bar"] .stattxt .review-count,
+:root[data-mn="reviewer-bar"] .stat2 .new-count,
+:root[data-mn="reviewer-bar"] .stat2 .learn-count,
+:root[data-mn="reviewer-bar"] .stat2 .review-count {
+  font-weight: 600;
+}
+:root[data-mn="reviewer-bar"] .stat2 {
+  font: 500 12px/1 var(--mn-font);
+  color: var(--mn-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Review screen: only Anki's own controls, never card styling ─ */
+
+:root[data-mn="reviewer"] #typeans {
+  padding: 6px 10px;
+  font-family: inherit;
+  color: inherit;
+  background: var(--mn-group);
+  border: 0.5px solid var(--mn-control-border);
+  border-radius: 8px;
+  box-shadow: inset 0 0.5px 1px rgba(0, 0, 0, 0.06);
+  outline: none;
+  transition: box-shadow 160ms ease-out;
+}
+:root[data-mn="reviewer"] #typeans:focus {
+  box-shadow: 0 0 0 3.5px var(--mn-focus);
+}
+
+:root[data-mn="reviewer"] .replay-button svg {
+  width: 34px;
+  height: 34px;
+  transition: transform var(--mn-snap-dur) var(--mn-snap);
+}
+:root[data-mn="reviewer"] .replay-button svg circle {
+  fill: color-mix(in srgb, var(--mn-accent) 12%, transparent);
+  stroke: none;
+}
+:root[data-mn="reviewer"] .replay-button svg path {
+  fill: var(--mn-accent);
+}
+:root[data-mn="reviewer"] .replay-button:active svg {
+  transform: scale(0.92);
+  transition-duration: 70ms;
+}
+
+/* ── Entrance: content materialises (blur + scale + fade together) ─
+   Only when arriving from a different screen; see macos.js. */
+
+@keyframes mn-materialize {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.985);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+@keyframes mn-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+:root[data-mn-enter] body > center,
+:root[data-mn-enter] body > #studiedToday,
+:root[data-mn-enter] body > .descfont,
+:root[data-mn-enter] body > div > .descfont {
+  animation: mn-materialize var(--mn-spring-dur) var(--mn-spring) both;
+}
+:root[data-mn-enter] body > center ~ center,
+:root[data-mn-enter] body > #studiedToday,
+:root[data-mn-enter] body > .descfont,
+:root[data-mn-enter] body > div > .descfont {
+  animation-delay: 40ms;
+}
+
+/* ── Accessibility ──────────────────────────────────────────── */
+
+/* Reduce motion: no slides, scales or springs — a short cross-fade. */
+@media (prefers-reduced-motion: reduce) {
+  :root[data-mn-enter] body > * {
+    animation: mn-fade 180ms ease both !important;
+  }
+  :root[data-mn] *:active {
+    transform: none !important;
+  }
+}
+:root[data-mn-enter] body.reduce-motion > * {
+  animation: mn-fade 180ms ease both !important;
+}
+:root[data-mn] body.reduce-motion *:active {
+  transform: none !important;
+}
+
+/* Reduce transparency: frosted becomes solid. */
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-mn="toolbar"] body .header .toolbar {
+    background: var(--mn-group);
+    backdrop-filter: none;
+  }
+  :root.night-mode[data-mn="toolbar"] body .header .toolbar {
+    background: #3a3a3a;
+  }
+}
+:root[data-mn="toolbar"] body.no-blur .header .toolbar {
+  background: var(--mn-control-hover);
+}
+
+/* Increase contrast: defined edges, stronger secondary text. */
+@media (prefers-contrast: more) {
+  :root[data-mn] {
+    --mn-secondary: rgba(0, 0, 0, 0.7);
+    --mn-tertiary: rgba(0, 0, 0, 0.45);
+    --mn-group-border: rgba(0, 0, 0, 0.35);
+    --mn-control-border: rgba(0, 0, 0, 0.45);
+    --mn-glass: #fff;
+    --mn-glass-border: rgba(0, 0, 0, 0.45);
+  }
+  :root.night-mode[data-mn],
+  :root[data-mn] body.nightMode {
+    --mn-secondary: rgba(255, 255, 255, 0.75);
+    --mn-tertiary: rgba(255, 255, 255, 0.5);
+    --mn-group-border: rgba(255, 255, 255, 0.4);
+    --mn-control-border: rgba(255, 255, 255, 0.45);
+    --mn-glass: #3a3a3a;
+    --mn-glass-border: rgba(255, 255, 255, 0.45);
+  }
+}
