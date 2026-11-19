@@ -30,6 +30,9 @@ SCREENS = {
     "Overview": "overview",
     "OverviewBottomBar": "bottombar",
     "Reviewer": "reviewer",
+    "BrowserPreviewer": "reviewer",
+    "Previewer": "reviewer",
+    "MultiCardPreviewer": "reviewer",
     "ReviewerBottomBar": "reviewer-bar",
     "AIPanel": "ai",
     "Editor": "editor",
@@ -111,7 +114,7 @@ gui_hooks.webview_will_set_content.append(on_webview_will_set_content)
 
 # Cards: Anki's stock note types ship `font-family: arial`, which clashes with
 # the SF interface around them. When a card still uses that stock font, show it
-# in the system font on the review screen. Display only: note types aren't
+# in the system font on the review screen and in previews. Display only: note types aren't
 # edited, a font you picked yourself is left alone, and the card template
 # editor still shows exactly what your CSS says.
 _STOCK_ARIAL = re.compile(r"font-family\s*:\s*['\"]?arial['\"]?\s*;", re.I)
@@ -121,7 +124,8 @@ _SYSTEM_CARD_FONT = (
 
 
 def on_card_will_show(text: str, card, kind: str) -> str:
-    if not kind.startswith("review") or _config().get("card_font", "system") != "system":
+    # Review screen and Browser preview; never the card template editor.
+    if not kind.startswith(("review", "preview")) or _config().get("card_font", "system") != "system":
         return text
     try:
         css = card.note_type()["css"]

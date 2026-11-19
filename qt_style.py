@@ -1,5 +1,5 @@
-"""Qt parts of Anki: pop-up menus, the Browser's table and sidebar, and small
-fixes in the Add and Preferences windows.
+"""Qt parts of Anki: pop-up menus, the Browser's table and sidebar, the card
+preview's button bar, and default buttons in the Add and Preferences windows.
 
 Controls such as buttons, pop-up buttons and checkboxes are left to the
 native macOS style, which already draws them as Tahoe controls. These rules
@@ -103,6 +103,11 @@ Browser SidebarTreeView::item:selected {{
     background: {accent};
 }}
 
+QFrame#mnPreviewDivider {{
+    background: {p["sep"]};
+    border: none;
+}}
+
 Browser QSplitter::handle {{
     background: {p["sep"]};
 }}
@@ -146,6 +151,63 @@ def _browser_shown(browser) -> None:
     view.setShowGrid(False)
     header = view.verticalHeader()
     header.setDefaultSectionSize(max(header.defaultSectionSize(), 26))
+
+
+CHEVRON = (
+    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'>"
+    "<path d='{d}' fill='none' stroke='{color}' stroke-width='1.8' "
+    "stroke-linecap='round' stroke-linejoin='round'/></svg>"
+)
+
+
+def _chevron(direction: str):
+    from aqt.qt import QIcon, QPixmap
+    from aqt.theme import theme_manager
+
+    color = "#ffffff" if theme_manager.night_mode else "#1d1d1f"
+    d = "M10 3.5 5.5 8l4.5 4.5" if direction == "left" else "M6 3.5 10.5 8 6 12.5"
+    pixmap = QPixmap()
+    pixmap.loadFromData(CHEVRON.format(d=d, color=color).encode(), "SVG")
+    return QIcon(pixmap)
+
+
+def _patch_previewer() -> None:
+    """Browser preview: chevron buttons instead of bare "<" and ">", a divider
+    above the bar, and no default button (a preview has no primary action)."""
+    from aqt.browser import previewer
+    from aqt.qt import QDialogButtonBox, QFrame, QSize, QWidget
+
+    original = previewer.MultiCardPreviewer._create_gui
+
+    def create(self, *args, **kwargs):
+        original(self, *args, **kwargs)
+        window = self if isinstance(self, QWidget) else getattr(self, "_window", None)
+        if window is not None:
+            for bar in window.findChildren(QDialogButtonBox):
+                for button in bar.findChildren(QPushButton):
+                    button.setAutoDefault(False)
+                    button.setDefault(False)
+                bar.setContentsMargins(10, 8, 10, 10)
+                layout = bar.parentWidget().layout() if bar.parentWidget() else None
+                if layout is not None and layout.indexOf(bar) >= 0:
+                    layout.setSpacing(0)  # divider sits right at the card's edge
+                    divider = QFrame()
+                    divider.setObjectName("mnPreviewDivider")
+                    divider.setFixedHeight(1)
+                    layout.insertWidget(layout.indexOf(bar), divider)
+        for button, direction, tip in (
+            (getattr(self, "_prev", None), "left", "Previous card"),
+            (getattr(self, "_next", None), "right", "Next card"),
+        ):
+            if button is None:
+                continue
+            button.setText("")
+            button.setIcon(_chevron(direction))
+            button.setIconSize(QSize(14, 14))
+            button.setToolTip(tip)
+            button.setMinimumWidth(40)
+
+    previewer.MultiCardPreviewer._create_gui = create
 
 
 def _add_cards_opened(addcards) -> None:
@@ -202,6 +264,7 @@ def setup(accent: Callable[[], tuple[str, str]]) -> None:
     gui_hooks.browser_will_show.append(_browser_shown)
     gui_hooks.add_cards_did_init.append(_add_cards_opened)
     _patch_preferences()
+    _patch_previewer()
 
     def reapply() -> None:
         from aqt.theme import theme_manager
