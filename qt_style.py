@@ -1,5 +1,6 @@
 """Qt parts of Anki: pop-up menus, the Browser's table and sidebar, the card
-preview's button bar, and default buttons in the Add and Preferences windows.
+preview's button bar, the card template editor, and default buttons in the
+Add and Preferences windows.
 
 Controls such as buttons, pop-up buttons and checkboxes are left to the
 native macOS style, which already draws them as Tahoe controls. These rules
@@ -101,6 +102,35 @@ Browser SidebarTreeView::item:hover:!selected {{
 Browser SidebarTreeView::item:selected {{
     color: #ffffff;
     background: {accent};
+}}
+
+CardLayout QTextEdit, CardLayout QPlainTextEdit {{
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    padding: 6px 4px;
+    background: palette(base);
+    border: 1px solid {p["border"]};
+    border-radius: 8px;
+}}
+CardLayout QTextEdit:focus, CardLayout QPlainTextEdit:focus {{
+    border: 1px solid {accent};
+}}
+CardLayout QRadioButton {{
+    padding: 4px 12px;
+    border-radius: 6px;
+    color: {p["fg"]};
+}}
+CardLayout QRadioButton::indicator {{
+    width: 0;
+    height: 0;
+    image: none;
+}}
+CardLayout QRadioButton:hover:!checked {{
+    background: {p["hover"]};
+}}
+CardLayout QRadioButton:checked {{
+    background: palette(base);
+    border: 1px solid {p["border"]};
 }}
 
 QFrame#mnPreviewDivider {{

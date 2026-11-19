@@ -202,3 +202,79 @@
   :root[data-mn="page"] .form-switch .form-check-input { transition: none; }
   :root[data-mn="page"] .btn:active { transform: none; }
 }
+
+/* ── Stats ──────────────────────────────────────────────────── */
+
+/* Header: glass bar with a hairline, like the deck Options header */
+:root[data-mn="page"] .range-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 16px;
+  padding: 8px 12px;
+  background: var(--mn-glass);
+  backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 0.5px solid var(--mn-separator);
+  box-shadow: none;
+}
+:root[data-mn="page"] .range-box input[type="text"] {
+  margin-inline-start: 8px;
+  padding: 3px 8px;
+  font-size: 12px;
+  color: var(--mn-label);
+  background: var(--mn-control);
+  border: 0.5px solid var(--mn-control-border);
+  border-radius: 6px;
+  box-shadow: var(--mn-shadow-sm);
+  outline: none;
+}
+:root[data-mn="page"] .range-box input[type="text"]:focus {
+  border-color: transparent;
+  box-shadow: 0 0 0 3.5px var(--mn-focus);
+}
+
+/* Radio groups (deck / collection, 1 month / 3 months / …) become
+   segmented controls: one track, the chosen segment raised. */
+:root[data-mn="page"] div:has(> label > input[type="radio"]) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+}
+:root[data-mn="page"] div:has(> label > input[type="radio"]) > label {
+  position: relative;
+  margin: 0;
+  padding: 3px 12px;
+  font-size: 12px;
+  color: var(--mn-label);
+  background: var(--mn-fill);
+  cursor: default;
+  transition: background-color 140ms ease-out;
+}
+:root[data-mn="page"] div:has(> label > input[type="radio"]) > label:first-of-type {
+  border-radius: 7px 0 0 7px;
+  padding-inline-start: 12px;
+}
+:root[data-mn="page"] div:has(> label > input[type="radio"]) > label:last-of-type {
+  border-radius: 0 7px 7px 0;
+}
+:root[data-mn="page"] div:has(> label > input[type="radio"]) > label:only-of-type {
+  border-radius: 7px;
+}
+:root[data-mn="page"] div:has(> label > input[type="radio"]) > label:has(input:checked) {
+  font-weight: 500;
+  background: var(--mn-control);
+  border-radius: 6px;
+  box-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.14), 0 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 2px var(--mn-fill);
+  z-index: 1;
+}
+:root[data-mn="page"] div:has(> label > input[type="radio"]) > label > input[type="radio"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+:root[data-mn="page"] div:has(> label > input[type="radio"]) > label:has(input:focus-visible) {
+  box-shadow: 0 0 0 3px var(--mn-focus);
+}
