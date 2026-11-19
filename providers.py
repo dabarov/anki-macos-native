@@ -221,8 +221,28 @@ class _Process:
         raise NotImplementedError
 
 
+# Card text comes from shared decks and can carry prompt injection, so Codex
+# runs with every way to act switched off: no shell, no browser or computer
+# use, no apps, plugins, MCP servers, hooks or web search. It can only reply.
+CODEX_FEATURES_OFF = (
+    "shell_tool", "unified_exec", "unified_exec_tty",
+    "browser_use", "browser_use_external", "browser_use_full_cdp_access",
+    "browser_annotation_api", "in_app_browser", "computer_use",
+    "apps", "plugins", "remote_plugin", "plugin_discovery_prefetch",
+    "hooks", "image_generation", "view_image", "multi_agent",
+    "skill_search", "tool_suggest", "goals", "in_app_local_automation",
+    "sleep_tool", "workspace_dependencies", "code_mode_host",
+)
+CODEX_LOCKDOWN = (
+    "-c", "mcp_servers={}",
+    "-c", "notify=[]",
+    "-c", 'web_search="disabled"',
+    *[arg for name in CODEX_FEATURES_OFF for arg in ("-c", f"features.{name}=false")],
+)
+
+
 class CodexRun(_Process):
-    """ChatGPT through `codex exec --json`, read-only, in an empty folder."""
+    """ChatGPT through `codex exec --json`, with no tools, in an empty folder."""
 
     def __init__(self, exe: str, model: str, prompt: str, cwd: str, **cb) -> None:
         super().__init__(**cb)
@@ -230,6 +250,7 @@ class CodexRun(_Process):
             exe, "exec", "--json", "--skip-git-repo-check", "--ephemeral",
             "--sandbox", "read-only", "-C", cwd,
             "-c", 'model_reasoning_effort="low"',
+            *CODEX_LOCKDOWN,
         ]
         if model:
             self.args += ["-m", model]
