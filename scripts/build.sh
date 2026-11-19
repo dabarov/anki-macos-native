@@ -8,5 +8,5 @@ out="dist/macos_native_anki.ankiaddon"
 rm -f "$out"
 zip -rq "$out" . \
   -x '.git/*' '.gitignore' 'dist/*' 'scripts/*' 'docs/*' \
-     'meta.json' 'user_files/ai-workdir/*' 'user_files/claude-workdir/*' '*__pycache__*' '*.pyc' '*.DS_Store'
+     'meta.json' 'snapshot.py' 'audit.py' 'sweep.py' 'user_files/ai-workdir/*' 'user_files/claude-workdir/*' '*__pycache__*' '*.pyc' '*.DS_Store'
 echo "Built $out ($(du -h "$out" | cut -f1))"

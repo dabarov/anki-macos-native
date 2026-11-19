@@ -199,9 +199,10 @@ except Exception:
 # ANKI_MN_SNAPSHOT saves each screen as PNG (no screen-recording permission
 # needed); ANKI_MN_AUDIT writes the computed fonts of every screen;
 # ANKI_MN_SWEEP opens and captures every window in light and dark.
-if os.environ.get("ANKI_MN_SNAPSHOT"):
-    from . import snapshot  # noqa: F401
-if os.environ.get("ANKI_MN_AUDIT"):
-    from . import audit  # noqa: F401
-if os.environ.get("ANKI_MN_SWEEP"):
-    from . import sweep  # noqa: F401
+# They live in the repository only; release packages leave them out.
+for _var, _module in (("ANKI_MN_SNAPSHOT", "snapshot"), ("ANKI_MN_AUDIT", "audit"), ("ANKI_MN_SWEEP", "sweep")):
+    if os.environ.get(_var):
+        try:
+            __import__(f"{__name__}.{_module}")
+        except ImportError:
+            print(f"macOS Native: {_var} is set, but {_module}.py isn't in this install")
