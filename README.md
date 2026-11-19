@@ -39,7 +39,7 @@
 - **A calmer review bar.** Show Answer is the default button. Again / Hard / Good / Easy are tinted capsules, so colour tells them apart without four solid fills competing.
 - **The Browser, Add, Edit and Preferences windows match too.** The Browser table drops its grid and boxed header for an accent selection, the sidebar reads like a Finder source list, and the note editor (Add, Edit, Browser) gets borderless toolbar buttons and rounded fields. Add is the Add window's default button.
 - **The card template editor and Stats match too.** Front / Back / Styling becomes a segmented switch and templates are edited in SF Mono in a rounded box. Stats gets a glass header with segmented controls, and every chart's range picker becomes one too.
-- **Every other window follows the same rules.** List boxes are rounded with accent selection (grey when the window isn't focused), text boxes are rounded, and any web-based screen gets the page theme by default: Card Info, Change Notetype, Import, About, Find Duplicates, Empty Cards, and screens a future Anki adds. Report lists (duplicates, empty cards) become grouped lists. Only windows that render cards are left showing your note type's own CSS.
+- **Every other window follows the same rules.** List boxes are rounded with accent selection (grey when the window isn't focused), text boxes are rounded, text fields keep their rounded shape in dark mode, the AnkiWeb sign-in dialog gets a proper title and accent link, and any web-based screen gets the page theme by default: Card Info, Change Notetype, Import, About, Find Duplicates, Empty Cards, and screens a future Anki adds. Report lists (duplicates, empty cards) become grouped lists. Only windows that render cards are left showing your note type's own CSS.
 - **Card previews match the review screen.** The Browser's preview shows cards with the same styling and font, under a button bar with chevron buttons and a hairline divider.
 - **Menus and the deck Options screen match too.** Pop-up menus get rounded corners, an inset accent highlight and inset separators. Deck Options gets grouped sections, a segmented Preset / This deck / Today only control and macOS-style switches.
 - **Motion that feels physical.** Buttons press in the moment you click and spring back on release. Screens settle in with a critically damped spring, only when you change screens.
@@ -160,7 +160,7 @@ cd anki-macos-native
 | `providers.py` | Finds and runs each model: Codex, Gemini CLI, Ollama |
 | `claude_cli.py` | Streams one reply from Claude Code with tools off |
 | `web/ai-panel.css`, `web/ai-panel.js` | The panel UI and model picker, using the same design tokens as the theme |
-| `snapshot.py`, `audit.py`, `sweep.py` | Dev tools: `ANKI_MN_SNAPSHOT=<dir>` saves each main-window screen as PNG; `ANKI_MN_AUDIT=<dir>` writes the computed fonts of every screen; `ANKI_MN_SWEEP=<dir>` opens every window (Browser, Add, Stats, Options, Card Info, Import, About, …) in light and dark and saves a PNG of each, without changing the collection |
+| `snapshot.py`, `audit.py`, `sweep.py` | Dev tools: `ANKI_MN_SNAPSHOT=<dir>` saves each main-window screen as PNG; `ANKI_MN_AUDIT=<dir>` writes the computed fonts of every screen; `ANKI_MN_SWEEP=<dir>` opens every window (Browser, Add, Stats, Options, Card Info, Import, About, sync sign-in, Profiles, …) in light and dark and saves a PNG of each, without changing the collection |
 
 ## Credits
 

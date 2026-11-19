@@ -126,6 +126,25 @@ def _windows() -> list[tuple[str, callable]]:
 
         show_empty_cards(mw)
 
+    def sync_sign_in():
+        # Cancelled by the sweep, so nothing is sent.
+        from aqt.sync import get_id_and_pass_from_user
+
+        get_id_and_pass_from_user(mw, lambda *_args: None)
+
+    def profiles():
+        # The real Profiles window unloads the collection; this is the same
+        # form without its handlers, so closing it can't switch or quit.
+        from aqt.forms import profiles as profiles_form
+        from aqt.qt import QMainWindow
+
+        window = QMainWindow(mw)
+        form = profiles_form.Ui_MainWindow()
+        form.setupUi(window)
+        form.profiles.addItems(mw.pm.profiles())
+        form.profiles.setCurrentRow(0)
+        window.show()
+
     def deck_options():
         from aqt.deckoptions import display_options_for_deck_id
 
@@ -147,6 +166,8 @@ def _windows() -> list[tuple[str, callable]]:
         ("addons", addons),
         ("about", about),
         ("empty-cards", empty_cards),
+        ("sync-sign-in", sync_sign_in),
+        ("profiles", profiles),
     ]
     if _card():
         windows += [
