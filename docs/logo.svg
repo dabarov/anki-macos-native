@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Anki macOS Native</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5BC0FF"/>
+      <stop offset="1" stop-color="#0A60F0"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".38"/>
+      <stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#EEF3FB"/>
+    </linearGradient>
+    <linearGradient id="star" gradientUnits="userSpaceOnUse" x1="0" y1="194.5" x2="0" y2="329.5"><stop offset="0" stop-color="#FFCC3D"/><stop offset=".45" stop-color="#FFA91F"/><stop offset="1" stop-color="#F26E1B"/></linearGradient>
+    <filter id="lift" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#002A6B" flood-opacity=".35"/>
+    </filter>
+    <clipPath id="tile"><rect x="28" y="28" width="456" height="456" rx="104"/></clipPath>
+  </defs>
+
+  <!-- Icon tile -->
+  <rect x="28" y="28" width="456" height="456" rx="104" fill="url(#bg)"/>
+  <g clip-path="url(#tile)">
+    <rect x="28" y="28" width="456" height="230" fill="url(#sheen)"/>
+  </g>
+  <rect x="28.75" y="28.75" width="454.5" height="454.5" rx="103.25" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="1.5"/>
+
+  <!-- Card behind -->
+  <rect x="150" y="128" width="212" height="268" rx="30" fill="#fff" fill-opacity=".45" transform="rotate(-9 256 262)"/>
+
+  <!-- Front card with the pixel star -->
+  <g filter="url(#lift)" transform="rotate(5 256 262)">
+    <rect x="146" y="122" width="220" height="280" rx="30" fill="url(#card)"/>
+    <path d="M248.5 194.5h15v15h-15zM233.5 209.5h15v15h-15zM248.5 209.5h15v15h-15zM263.5 209.5h15v15h-15zM233.5 224.5h15v15h-15zM248.5 224.5h15v15h-15zM263.5 224.5h15v15h-15zM188.5 239.5h15v15h-15zM203.5 239.5h15v15h-15zM218.5 239.5h15v15h-15zM233.5 239.5h15v15h-15zM248.5 239.5h15v15h-15zM263.5 239.5h15v15h-15zM278.5 239.5h15v15h-15zM293.5 239.5h15v15h-15zM308.5 239.5h15v15h-15zM203.5 254.5h15v15h-15zM218.5 254.5h15v15h-15zM233.5 254.5h15v15h-15zM248.5 254.5h15v15h-15zM263.5 254.5h15v15h-15zM278.5 254.5h15v15h-15zM293.5 254.5h15v15h-15zM218.5 269.5h15v15h-15zM233.5 269.5h15v15h-15zM248.5 269.5h15v15h-15zM263.5 269.5h15v15h-15zM278.5 269.5h15v15h-15zM218.5 284.5h15v15h-15zM233.5 284.5h15v15h-15zM263.5 284.5h15v15h-15zM278.5 284.5h15v15h-15zM203.5 299.5h15v15h-15zM218.5 299.5h15v15h-15zM278.5 299.5h15v15h-15zM293.5 299.5h15v15h-15zM203.5 314.5h15v15h-15zM293.5 314.5h15v15h-15z" fill="url(#star)"/>
+  </g>
+
+  <!-- Sparkle: the assistant beside your cards -->
+  <path d="M392 104c3 22 13 32 35 35-22 3-32 13-35 35-3-22-13-32-35-35 22-3 32-13 35-35z" fill="#fff"/>
+  <path d="M424 178c1.6 11 6.6 16 17.6 17.6-11 1.6-16 6.6-17.6 17.6-1.6-11-6.6-16-17.6-17.6 11-1.6 16-6.6 17.6-17.6z" fill="#fff" fill-opacity=".75"/>
+</svg>
