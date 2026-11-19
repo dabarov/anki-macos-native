@@ -5,7 +5,7 @@
 <h1 align="center">Anki macOS Native</h1>
 
 <p align="center">
-  <b>Make Anki feel like it shipped with macOS 26, and ask Claude about any card without leaving your review.</b>
+  <b>Make Anki feel like it shipped with macOS 26, and ask Claude, ChatGPT, Gemini or a local model about any card without leaving your review.</b>
 </p>
 
 <p align="center">
@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/ask-claude-answer.png" alt="Reviewing a card with the Ask Claude panel open" width="900">
+  <img src="docs/screenshots/ask-ai-thread.png" alt="Reviewing a card while Claude, ChatGPT and a local model answer in the side panel" width="900">
 </p>
 
 ## Before and after
@@ -44,21 +44,26 @@
   <img src="docs/screenshots/dark-decks.png" alt="Deck list in dark mode" width="900">
 </p>
 
-### Ask Claude, right next to the card
+### Ask AI, right next to the card
 
 <p align="center">
-  <img src="docs/screenshots/ask-claude-hint.png" alt="Asking Claude for a hint while the answer is still hidden" width="900">
+  <img src="docs/screenshots/ask-ai-hint.png" alt="Asking Claude for a hint while the answer is still hidden" width="900">
 </p>
 
-Stuck on a card? Open the panel with **Ask Claude** in the toolbar, Tools → Ask Claude, or **⌥⌘I**, and ask.
+Stuck on a card? Open the panel with **Ask AI** in the toolbar, Tools → Ask AI, or **⌥⌘I**, and ask.
 
-- **No spoilers.** While the answer is hidden, Claude sees only the question and gives hints. Once you reveal the answer, it explains it, gives examples or helps you remember it.
+- **Pick your model** from the panel's title: Claude, ChatGPT, Gemini, or any model in Ollama, local or cloud. Everything answers through apps already on your Mac, so no API keys are stored in Anki.
+- **Compare answers.** A card's conversation is shared across models, and each reply is labelled with the model that wrote it, so you can switch mid-thread.
+- **No spoilers.** While the answer is hidden, the model sees only the question and gives hints. Once you reveal the answer, it explains it, gives examples or helps you remember it.
 - **One conversation per card.** The next card starts fresh, and stepping out to the deck list and back keeps the conversation.
 - **Typing is safe.** While the message field has focus, Anki's single-key review shortcuts (Space, Enter, 1–4, E, R, …) are paused, so typing "1" can't answer a card.
-- **Replies stream in** as Claude writes them, and you can stop one at any time.
 
 <p align="center">
-  <img src="docs/screenshots/dark-ask-claude.png" alt="Ask Claude panel in dark mode" width="900">
+  <img src="docs/screenshots/ask-ai-models.png" alt="The model picker: Claude, ChatGPT, Gemini and Ollama models" width="900">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/dark-ask-ai.png" alt="Ask AI panel and model picker in dark mode" width="900">
 </p>
 
 ## Install
@@ -69,17 +74,24 @@ Stuck on a card? Open the panel with **Ask Claude** in the toolbar, Tools → As
 
 To **update**, install the newer `.ankiaddon` the same way; your settings are kept. To **turn it off**, use Tools → Add-ons → macOS Native → Toggle Enabled.
 
-### Setting up Ask Claude
+### Setting up Ask AI
 
-The panel uses [Claude Code](https://claude.com/claude-code) on your Mac, so it works with your existing Claude plan and no API key is stored in Anki.
+Set up whichever models you want. The picker greys out the ones it can't find and says why.
 
-1. Install Claude Code.
-2. Run `claude` in Terminal once and sign in.
-3. Open the panel in Anki. If Claude Code can't be found, the panel says so. Point `claude_path` at it in the config if it lives somewhere unusual.
+| Model | What you need |
+| --- | --- |
+| **Claude** | [Claude Code](https://claude.com/claude-code). Run `claude` in Terminal once and sign in. |
+| **ChatGPT** | The [ChatGPT app](https://openai.com/chatgpt/download/), signed in. It includes the Codex CLI the panel uses. A standalone `codex` install works too. |
+| **Gemini** | [Gemini CLI](https://github.com/google-gemini/gemini-cli). Run `gemini` once and sign in. |
+| **Ollama** | [Ollama](https://ollama.com) with at least one model (`ollama pull qwen3`). If Ollama isn't running, the picker offers to start it. |
 
 ## Privacy
 
-Ask Claude sends Claude Code the deck name, the card's question, the answer (only once you've revealed it) and the conversation for that card. Claude Code runs with its tools, MCP servers, skills and settings files switched off, so it can't read files or run commands. It can only reply to the text the panel sends. Nothing is sent until you ask a question.
+The panel sends the model you picked the deck name, the card's question, the answer (only once you've revealed it) and the conversation for that card. Nothing is sent until you ask a question.
+
+- **Claude Code** runs with its tools, MCP servers, skills and settings files switched off.
+- **Codex** runs in a read-only sandbox in an empty folder, with no saved session.
+- **Ollama** models on your Mac never leave it. Cloud models go to Ollama's servers.
 
 ## Configuration
 
@@ -90,8 +102,11 @@ Tools → Add-ons → macOS Native → Config. Restart Anki after changing a set
 | `accent` | `"system"` | Follows the macOS accent colour, or set a hex colour such as `"#5E5CE6"`. |
 | `motion` | `true` | `false` turns off entrance motion. |
 | `card_font` | `"system"` | Shows stock-Arial cards in SF. `"template"` shows exactly what the card's CSS says. |
-| `ai_model` | `""` | Model for Ask Claude. Empty uses Claude Code's default. Try `"claude-sonnet-5-5"` for faster replies. |
-| `claude_path` | `""` | Path to the `claude` binary, if it isn't found automatically. |
+| `claude_model` | `""` | Claude model. Empty uses Claude Code's default. |
+| `codex_model` | `""` | ChatGPT model. Empty uses the first model Codex lists for your account. |
+| `gemini_model` | `""` | Gemini model. Empty uses the Gemini CLI default. |
+| `ollama_url` | `"http://127.0.0.1:11434"` | Where Ollama is listening. |
+| `claude_path`, `codex_path`, `gemini_path` | `""` | Paths to each CLI, if they aren't found automatically. |
 
 ## Compatibility
 
@@ -102,24 +117,28 @@ Built and tested with **Anki 26.09** on **macOS 26 Tahoe**. The add-on only adds
 ```bash
 git clone https://github.com/dabarov/anki-macos-native.git
 cd anki-macos-native
-./scripts/install-dev.sh   # links the repo into Anki's add-ons folder
-./scripts/build.sh         # builds dist/macos_native_anki.ankiaddon
+./scripts/install-dev.sh       # links the repo into Anki's add-ons folder
+./scripts/build.sh             # builds dist/macos_native_anki.ankiaddon
+./scripts/release.sh minor     # bump, tag, build, push and publish a GitHub release
 ```
+
+`release.sh` takes `patch` (default), `minor`, `major` or an exact version, and `--dry-run` to preview the version and release notes without changing anything. Notes are grouped from [conventional commits](https://www.conventionalcommits.org) since the last tag.
 
 | File | Purpose |
 | --- | --- |
 | `__init__.py` | Adds the theme to Anki's main-window pages, reads the accent colour, swaps stock Arial on cards |
 | `web/macos.css`, `web/macos.js` | The theme. Every rule is scoped to `:root[data-mn="<screen>"]` |
-| `ai_panel.py` | The Ask Claude dock: card context, per-card conversation, shortcut pausing |
+| `ai_panel.py` | The Ask AI dock: card context, per-card conversation, model choice, shortcut pausing |
+| `providers.py` | Finds and runs each model: Codex, Gemini CLI, Ollama |
 | `claude_cli.py` | Streams one reply from Claude Code with tools off |
-| `web/ai-panel.css`, `web/ai-panel.js` | The panel UI, using the same design tokens as the theme |
+| `web/ai-panel.css`, `web/ai-panel.js` | The panel UI and model picker, using the same design tokens as the theme |
 | `snapshot.py`, `audit.py` | Dev tools: `ANKI_MN_SNAPSHOT=<dir>` saves each screen as PNG; `ANKI_MN_AUDIT=<dir>` writes the computed fonts of every screen |
 
 ## Credits
 
 Design guidance from Emil Kowalski's [apple-design](https://github.com/emilkowalski/skills/tree/main/skills/apple-design) skill and Apple's WWDC design talks.
 
-Not affiliated with Anki, Apple or Anthropic.
+Not affiliated with Anki, Apple, Anthropic, OpenAI, Google or Ollama.
 
 ## License
 
