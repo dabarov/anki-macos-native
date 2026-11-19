@@ -1,5 +1,5 @@
-/* Ask Claude panel — UI only. Python owns the conversation and talks to
- * Claude Code; this file renders it and reports what the user does. */
+/* Ask AI panel: UI only. Python owns the conversation and talks to the
+ * providers; this file renders it and reports what the user does. */
 (function () {
   "use strict";
 
@@ -17,6 +17,10 @@
       '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3.5" width="12" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M5 7h6M5 9.5h3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
     warn:
       '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2 14.3 13H1.7z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 6.3v3.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.4" r=".8" fill="currentColor"/></svg>',
+    chevron:
+      '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2.6 3.8 5 6.2l2.4-2.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    check:
+      '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 6.4 5 8.8l4.6-5.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   };
 
   var SUGGEST = {
@@ -25,11 +29,13 @@
     none: ["How does spaced repetition work?"],
   };
 
-  var ctx = { state: "none", revealed: false, ready: true, deck: "", shortcut: "" };
+  var ctx = { state: "none", revealed: false, deck: "", shortcut: "", provider: null, providers: [] };
   var streaming = false;
+  var starting = false;
   var buffer = "";
   var liveEl = null;
   var rafPending = false;
+  var menuOpen = false;
   var els = {};
 
   function send(msg) {
@@ -51,6 +57,23 @@
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
+  }
+
+  function current() {
+    for (var i = 0; i < ctx.providers.length; i++) {
+      if (ctx.providers[i].id === ctx.provider) return ctx.providers[i];
+    }
+    return null;
+  }
+
+  function currentName() {
+    var p = current();
+    return p ? p.name : "AI";
+  }
+
+  function ready() {
+    var p = current();
+    return !!(p && p.available);
   }
 
   // Small, safe Markdown: text is escaped first, then a few marks applied.
@@ -119,7 +142,10 @@
     if (!root) return;
 
     var head = h("header", "ai-head");
-    head.appendChild(h("div", "ai-title", "Ask Claude"));
+    els.picker = h("button", "ai-picker");
+    els.picker.setAttribute("aria-haspopup", "menu");
+    els.picker.setAttribute("aria-expanded", "false");
+    head.appendChild(els.picker);
     var actions = h("div", "ai-actions");
     els.newBtn = h("button", "ai-icon", ICON.compose);
     els.newBtn.title = "New conversation";
@@ -130,6 +156,10 @@
     actions.appendChild(els.closeBtn);
     head.appendChild(actions);
 
+    els.menu = h("div", "ai-menu");
+    els.menu.setAttribute("role", "menu");
+    els.menu.hidden = true;
+
     els.chip = h("div", "ai-context");
 
     els.thread = h("main", "ai-thread");
@@ -139,19 +169,23 @@
     var box = h("div", "ai-box");
     els.input = h("textarea", "ai-input");
     els.input.rows = 1;
-    els.input.setAttribute("aria-label", "Message Claude");
+    els.input.setAttribute("aria-label", "Message");
     els.sendBtn = h("button", "ai-send", ICON.send);
     els.sendBtn.setAttribute("aria-label", "Send");
     box.appendChild(els.input);
     box.appendChild(els.sendBtn);
     foot.appendChild(box);
-    foot.appendChild(h("div", "ai-note", "Claude can make mistakes. Check important facts."));
+    foot.appendChild(h("div", "ai-note", "AI can make mistakes. Check important facts."));
 
     root.appendChild(head);
+    root.appendChild(els.menu);
     root.appendChild(els.chip);
     root.appendChild(els.thread);
     root.appendChild(foot);
 
+    els.picker.addEventListener("click", function () {
+      menuOpen ? closeMenu() : openMenu();
+    });
     els.newBtn.addEventListener("click", function () {
       send({ type: "new" });
     });
@@ -179,12 +213,91 @@
     els.input.addEventListener("blur", function () {
       send({ type: "blur" });
     });
+    document.addEventListener("mousedown", function (e) {
+      if (menuOpen && !els.menu.contains(e.target) && !els.picker.contains(e.target)) closeMenu();
+    });
+    els.menu.addEventListener("keydown", menuKeys);
 
+    renderHeader();
     renderChip();
     renderEmpty();
     updateSend();
     send({ type: "ready" });
   }
+
+  // ── Model picker: a pull-down anchored to the title ────────────
+
+  function renderHeader() {
+    var p = current();
+    els.picker.innerHTML =
+      '<span class="ai-picker-name">' + esc(p ? p.name : "Choose a model") + "</span>" + ICON.chevron;
+    els.picker.title = starting ? "Starting Ollama…" : p ? p.detail : "";
+  }
+
+  function renderMenu() {
+    els.menu.innerHTML = "";
+    var group = null;
+    ctx.providers.forEach(function (p) {
+      if (p.group !== group) {
+        group = p.group;
+        els.menu.appendChild(h("div", "ai-menu-group", esc(group)));
+      }
+      var item = h("button", "ai-menu-item");
+      item.setAttribute("role", "menuitemradio");
+      item.setAttribute("aria-checked", p.id === ctx.provider ? "true" : "false");
+      var detail = p.available ? p.detail : p.reason || p.detail;
+      if (starting && p.id === "ollama:start") detail = "Starting…";
+      item.innerHTML =
+        '<span class="ai-menu-check">' + (p.id === ctx.provider ? ICON.check : "") + "</span>" +
+        '<span class="ai-menu-text"><span class="ai-menu-name">' + esc(p.name) + "</span>" +
+        '<span class="ai-menu-detail">' + esc(detail || "") + "</span></span>";
+      if (!p.available || (starting && p.id === "ollama:start")) {
+        item.disabled = true;
+      } else {
+        item.addEventListener("click", function () {
+          send({ type: "select", id: p.id });
+          if (p.kind !== "action") closeMenu();
+        });
+      }
+      els.menu.appendChild(item);
+    });
+  }
+
+  function openMenu() {
+    send({ type: "refresh" });
+    renderMenu();
+    els.menu.hidden = false;
+    menuOpen = true;
+    els.picker.setAttribute("aria-expanded", "true");
+    els.picker.classList.add("is-open");
+    var first = els.menu.querySelector(".ai-menu-item[aria-checked=true]") || els.menu.querySelector(".ai-menu-item:not([disabled])");
+    if (first) first.focus();
+  }
+
+  function closeMenu() {
+    if (!menuOpen) return;
+    menuOpen = false;
+    els.menu.hidden = true;
+    els.picker.setAttribute("aria-expanded", "false");
+    els.picker.classList.remove("is-open");
+  }
+
+  function menuKeys(e) {
+    var items = Array.prototype.slice.call(els.menu.querySelectorAll(".ai-menu-item:not([disabled])"));
+    var i = items.indexOf(document.activeElement);
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      (items[i + 1] || items[0]).focus();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      (items[i - 1] || items[items.length - 1]).focus();
+    } else if (e.key === "Escape") {
+      closeMenu();
+      els.picker.focus();
+    }
+  }
+
+  // ── Thread ──────────────────────────────────────────────────────
 
   function grow() {
     var t = els.input;
@@ -197,27 +310,19 @@
     els.sendBtn.classList.toggle("is-stop", streaming);
     els.sendBtn.innerHTML = streaming ? ICON.stop : ICON.send;
     els.sendBtn.setAttribute("aria-label", streaming ? "Stop" : "Send");
-    els.sendBtn.disabled = !streaming && (empty || !ctx.ready);
+    els.sendBtn.disabled = !streaming && (empty || !ready());
   }
 
   function placeholder() {
-    if (ctx.state !== "card") return "Ask Claude anything…";
-    return ctx.revealed ? "Ask about this answer…" : "Ask for a hint…";
+    var name = currentName();
+    if (ctx.state !== "card") return "Ask " + name + " anything…";
+    return ctx.revealed ? "Ask " + name + " about this answer…" : "Ask " + name + " for a hint…";
   }
 
   function renderChip() {
-    var text;
-    if (ctx.state !== "card") {
-      text = "No card open";
-    } else {
-      text = ctx.revealed ? "Answer shown" : "Answer hidden — hints only";
-    }
+    var text = ctx.state !== "card" ? "No card open" : ctx.revealed ? "Answer shown" : "Answer hidden — hints only";
     els.chip.innerHTML =
-      '<span class="ai-chip">' +
-      ICON.card +
-      "<span>" +
-      esc(text) +
-      "</span></span>" +
+      '<span class="ai-chip">' + ICON.card + "<span>" + esc(text) + "</span></span>" +
       (ctx.state === "card" && ctx.deck ? '<span class="ai-deck">' + esc(ctx.deck) + "</span>" : "");
     els.input.placeholder = placeholder();
     els.closeBtn.title = "Close (" + (ctx.shortcut || "⌥⌘I") + ")";
@@ -236,34 +341,31 @@
     els.thread.innerHTML = "";
     var empty = h("section", "ai-empty mn-in");
     empty.appendChild(h("div", "ai-mark", ICON.spark));
-    if (!ctx.ready) {
-      empty.appendChild(h("h2", "", "Claude Code is needed"));
+    var p = current();
+    if (!ready()) {
+      empty.appendChild(h("h2", "", p ? esc(p.name) + " isn't ready" : "Choose a model"));
       empty.appendChild(
-        h(
-          "p",
-          "",
-          "This panel uses Claude Code on your Mac. Install it, sign in once by running " +
-            "<code>claude</code> in Terminal, then reopen the panel."
-        )
+        h("p", "", p && p.reason ? esc(p.reason) + ". Pick another model from the menu above." : "Pick Claude, ChatGPT, Gemini or a local model from the menu above.")
       );
       els.thread.appendChild(empty);
       return;
     }
-    var title = ctx.state !== "card" ? "Ask Claude" : ctx.revealed ? "Make it click" : "Stuck on this card?";
+    var name = esc(p.name);
+    var title = ctx.state !== "card" ? "Ask " + name : ctx.revealed ? "Make it click" : "Stuck on this card?";
     var sub =
       ctx.state !== "card"
         ? "Start reviewing a deck to ask about a card. You can still ask general questions."
         : ctx.revealed
         ? "Ask why the answer is what it is, or for an example."
-        : "Claude can see the question, not the answer, so you'll get hints first.";
+        : name + " can see the question, not the answer, so you'll get hints first.";
     empty.appendChild(h("h2", "", title));
-    empty.appendChild(h("p", "", esc(sub)));
+    empty.appendChild(h("p", "", sub));
     var list = h("div", "ai-suggest");
     var items = SUGGEST[ctx.state !== "card" ? "none" : ctx.revealed ? "answer" : "question"];
     items.forEach(function (label) {
       var b = h("button", "ai-chipbtn", esc(label));
       b.addEventListener("click", function () {
-        if (!streaming && ctx.ready) submit(label);
+        if (!streaming && ready()) submit(label);
       });
       list.appendChild(b);
     });
@@ -271,9 +373,13 @@
     els.thread.appendChild(empty);
   }
 
-  function addUser(text) {
+  function clearEmpty() {
     var empty = els.thread.querySelector(".ai-empty");
     if (empty) empty.remove();
+  }
+
+  function addUser(text) {
+    clearEmpty();
     var row = h("div", "ai-msg ai-user mn-in");
     row.appendChild(h("div", "ai-bubble", esc(text).replace(/\n/g, "<br>")));
     els.thread.appendChild(row);
@@ -281,7 +387,9 @@
   }
 
   function startReply() {
-    var row = h("div", "ai-msg ai-claude mn-in");
+    clearEmpty();
+    var row = h("div", "ai-msg ai-reply mn-in");
+    row.appendChild(h("div", "ai-who", esc(currentName())));
     var body = h("div", "ai-text");
     body.appendChild(h("div", "ai-typing", "<i></i><i></i><i></i>"));
     row.appendChild(body);
@@ -301,7 +409,7 @@
 
   function submit(text) {
     var value = (text != null ? text : els.input.value).trim();
-    if (!value || streaming || !ctx.ready) return;
+    if (!value || streaming || !ready()) return;
     els.input.value = "";
     grow();
     addUser(value);
@@ -311,16 +419,30 @@
     send({ type: "send", text: value });
   }
 
+  function removeLive() {
+    if (liveEl && liveEl.parentNode) liveEl.parentNode.remove();
+    liveEl = null;
+  }
+
   // ── API called from Python ─────────────────────────────────────
 
   window.mnAI = {
     setContext: function (next) {
-      var changed = next.state !== ctx.state || next.revealed !== ctx.revealed || next.ready !== ctx.ready;
+      var before = ctx.state + "|" + ctx.revealed + "|" + ctx.provider + "|" + ready();
       ctx = next;
       if (!els.chip) return;
+      renderHeader();
       renderChip();
-      if (changed && els.thread.querySelector(".ai-empty")) renderEmpty();
+      if (menuOpen) renderMenu();
+      var after = ctx.state + "|" + ctx.revealed + "|" + ctx.provider + "|" + ready();
+      if (before !== after && els.thread.querySelector(".ai-empty")) renderEmpty();
       updateSend();
+    },
+    setStarting: function (on) {
+      starting = on;
+      if (!els.picker) return;
+      renderHeader();
+      if (menuOpen) renderMenu();
     },
     reset: function () {
       streaming = false;
@@ -342,7 +464,7 @@
       streaming = false;
       if (liveEl) {
         if (!buffer) {
-          liveEl.parentNode.remove();
+          removeLive();
         } else {
           paint();
           if (stopped) liveEl.appendChild(h("div", "ai-stopped", "Stopped"));
@@ -351,23 +473,17 @@
       liveEl = null;
       updateSend();
     },
-    error: function (message, kind) {
+    error: function (message, kind, hint) {
       streaming = false;
-      if (liveEl && !buffer) liveEl.parentNode.remove();
+      if (!buffer) removeLive();
       liveEl = null;
-      var title =
-        kind === "signin"
-          ? "Sign in to Claude Code"
-          : kind === "missing"
-          ? "Claude Code not found"
-          : "Claude couldn't answer";
-      var detail =
-        kind === "signin"
-          ? "Run <code>claude</code> in Terminal and sign in, then try again."
-          : esc(message);
+      var name = esc(currentName());
+      var title = kind === "signin" ? "Sign in to use " + name : kind === "missing" ? name + " isn't available" : name + " couldn't answer";
       var card = h("div", "ai-error mn-in");
       card.innerHTML =
-        '<div class="ai-error-icon">' + ICON.warn + "</div><div><strong>" + title + "</strong><p>" + detail + "</p></div>";
+        '<div class="ai-error-icon">' + ICON.warn + "</div><div><strong>" + title + "</strong><p>" +
+        (hint || esc(message)) + "</p></div>";
+      clearEmpty();
       els.thread.appendChild(card);
       scrollToEnd();
       updateSend();

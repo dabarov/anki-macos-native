@@ -1,7 +1,7 @@
 """Dev-only visual check. Loaded only when ANKI_MN_SNAPSHOT is set.
 
 Walks deck list → overview → question → answer → deck list in light mode,
-asking the Ask Claude panel two questions on the way, then repeats in dark
+asking the Ask AI panel two questions on the way, then repeats in dark
 mode. Saves a PNG of the main window at each step. Switches Anki's theme
 setting for the run and restores it at the end. Never answers a card, so
 scheduling is untouched.

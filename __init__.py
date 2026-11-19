@@ -125,7 +125,7 @@ def on_card_will_show(text: str, card, kind: str) -> str:
 
 gui_hooks.card_will_show.append(on_card_will_show)
 
-# "Ask Claude" side panel. Kept isolated: if it fails, the theme still loads.
+# "Ask AI" side panel. Kept isolated: if it fails, the theme still loads.
 try:
     from . import ai_panel
 
@@ -133,7 +133,7 @@ try:
 except Exception:
     import traceback
 
-    print("macOS Native: Ask Claude panel disabled\n" + traceback.format_exc())
+    print("macOS Native: Ask AI panel disabled\n" + traceback.format_exc())
 
 # Dev-only tools, inert unless their variable names an output folder:
 # ANKI_MN_SNAPSHOT saves each screen as PNG (no screen-recording permission

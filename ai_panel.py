@@ -1,8 +1,9 @@
-"""Ask Claude — a side panel for questions about the card you're reviewing.
+"""Ask AI: a side panel for questions about the card you're reviewing.
 
-One conversation per card: moving to the next card starts fresh. While the
-answer is still hidden, Claude only sees the question and is told to give
-hints rather than the answer.
+Pick Claude, ChatGPT, Gemini or a local Ollama model from the panel's title.
+One conversation per card, which every provider shares, so you can switch
+mid-thread to compare answers. While the answer is still hidden, the model
+only sees the question and is told to give hints rather than the answer.
 """
 
 from __future__ import annotations
@@ -20,19 +21,20 @@ from aqt.qt import (
     QKeySequence,
     QShortcut,
     Qt,
+    QTimer,
     QWidget,
 )
 from aqt.webview import AnkiWebView
 
-from .claude_cli import ClaudeRun, find_claude
+from . import providers
 
 ADDON_DIR = os.path.dirname(__file__)
-WORKDIR = os.path.join(ADDON_DIR, "user_files", "claude-workdir")
+WORKDIR = os.path.join(ADDON_DIR, "user_files", "ai-workdir")
 TOGGLE_KEY = "Ctrl+Alt+I"  # ⌥⌘I on macOS, the usual "show inspector" key
 TOGGLE_LABEL = "⌥⌘I"
 
 SYSTEM_PROMPT = """\
-You are Claude, helping a student who is reviewing flashcards in Anki. You \
+You are {name}, helping a student who is reviewing flashcards in Anki. You \
 sit in a narrow side panel next to the card they are looking at.
 
 The student's message comes with the card's text. When the answer is \
@@ -40,10 +42,17 @@ marked hidden, the student has not revealed it yet: do not state it. Give \
 a hint that moves them toward it, and reveal it only if they ask you to.
 
 Write for a narrow panel: keep replies under about 80 words unless the \
-student asks for more, in short paragraphs or a short list. Explain the idea behind the card rather \
-than restating it, and add one concrete example when it helps. If the card \
-looks wrong or ambiguous, say so plainly. Reply in the language the student \
-writes in."""
+student asks for more, in short paragraphs or a short list. Explain the idea \
+behind the card rather than restating it, and add one concrete example when \
+it helps. If the card looks wrong or ambiguous, say so plainly. Reply in the \
+language the student writes in. Answer from what you know; don't run tools \
+or read files."""
+
+SIGN_IN = {
+    "claude": "Run <code>claude</code> in Terminal and sign in, then try again.",
+    "codex": "Open ChatGPT and sign in, or run <code>codex login</code> in Terminal.",
+    "gemini": "Run <code>gemini</code> in Terminal and sign in, then try again.",
+}
 
 
 # ── Card text ───────────────────────────────────────────────────────
@@ -87,29 +96,42 @@ def current_card_context() -> dict:
     return ctx
 
 
-def build_prompt(ctx: dict, history: list[dict], latest: str) -> str:
-    out: list[str] = []
-    if ctx.get("state") == "card":
-        out.append(f'<card deck="{html.escape(ctx.get("deck", ""))}">')
-        out.append(f"<question>\n{ctx['question']}\n</question>")
-        if ctx.get("revealed"):
-            out.append(f"<answer>\n{ctx.get('answer', '')}\n</answer>")
-        else:
-            out.append(
-                "<answer>(The card has an answer, but the student hasn't revealed it yet, "
-                "so it isn't shown to you either.)</answer>"
-            )
-        out.append("</card>")
+def card_block(ctx: dict) -> str:
+    if ctx.get("state") != "card":
+        return "(No card is open right now.)"
+    lines = [
+        f'<card deck="{html.escape(ctx.get("deck", ""))}">',
+        f"<question>\n{ctx['question']}\n</question>",
+    ]
+    if ctx.get("revealed"):
+        lines.append(f"<answer>\n{ctx.get('answer', '')}\n</answer>")
     else:
-        out.append("(No card is open right now.)")
+        lines.append(
+            "<answer>(The card has an answer, but the student hasn't revealed it yet, "
+            "so it isn't shown to you either.)</answer>"
+        )
+    lines.append("</card>")
+    return "\n".join(lines)
+
+
+def build_prompt(ctx: dict, history: list[dict], latest: str) -> str:
+    """One self-contained prompt, for the CLI providers."""
+    out = [card_block(ctx)]
     if history:
         out.append("\n<conversation_so_far>")
         for m in history:
-            who = "Student" if m["role"] == "user" else "Claude"
+            who = "Student" if m["role"] == "user" else "Tutor"
             out.append(f"{who}: {m['text']}")
         out.append("</conversation_so_far>")
     out.append(f"\nStudent: {latest}")
     return "\n".join(out)
+
+
+def build_chat(ctx: dict, history: list[dict], latest: str) -> list[dict]:
+    """Chat messages, for providers with a native chat API (Ollama)."""
+    msgs = [{"role": m["role"], "content": m["text"]} for m in history]
+    msgs.append({"role": "user", "content": f"{card_block(ctx)}\n\n{latest}"})
+    return msgs
 
 
 # ── Panel ───────────────────────────────────────────────────────────
@@ -120,15 +142,18 @@ class AIPanel:
     def __init__(self) -> None:
         self.messages: list[dict] = []
         self.card_id: Optional[int] = None
-        self.run: Optional[ClaudeRun] = None
+        self.run = None
         self.partial = ""
         self.loaded = False
+        self.catalog: list[dict] = []
+        self.provider_id = "claude"
+        self._run_provider: dict = {}
         self._muted_shortcuts: list[QShortcut] = []
         self._muted_actions: list[tuple[QAction, list]] = []
 
         self.dock = QDockWidget(mw)
-        self.dock.setObjectName("mnAskClaude")
-        self.dock.setWindowTitle("Ask Claude")
+        self.dock.setObjectName("mnAskAI")
+        self.dock.setWindowTitle("Ask AI")
         self.dock.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetClosable)
         self.dock.setTitleBarWidget(QWidget())  # header is drawn in the web view
         self.dock.setMinimumWidth(300)
@@ -136,9 +161,9 @@ class AIPanel:
         try:
             from aqt.webview import AnkiWebViewKind
 
-            self.web = AnkiWebView(parent=self.dock, title="Ask Claude", kind=AnkiWebViewKind.DEFAULT)
+            self.web = AnkiWebView(parent=self.dock, title="Ask AI", kind=AnkiWebViewKind.DEFAULT)
         except Exception:
-            self.web = AnkiWebView(parent=self.dock, title="Ask Claude")
+            self.web = AnkiWebView(parent=self.dock, title="Ask AI")
         self.web.set_bridge_command(self._on_bridge, self)
         self.dock.setWidget(self.web)
 
@@ -153,15 +178,42 @@ class AIPanel:
 
         QApplication.instance().focusChanged.connect(self._on_focus_changed)
 
-    def _on_focus_changed(self, _old, new) -> None:
-        if not (self._muted_shortcuts or self._muted_actions):
+    # providers -------------------------------------------------------
+
+    def _cfg(self) -> dict:
+        return mw.addonManager.getConfig(__name__) or {}
+
+    def refresh_providers(self) -> None:
+        self.catalog = providers.catalog(self._cfg())
+        if mw.pm.profile is not None:
+            self.provider_id = mw.pm.profile.get("mn_ai_provider", self.provider_id)
+
+    def provider(self) -> Optional[dict]:
+        chat = [p for p in self.catalog if p["kind"] != "action"]
+        for p in chat:
+            if p["id"] == self.provider_id:
+                return p
+        return next((p for p in chat if p["available"]), chat[0] if chat else None)
+
+    def select(self, provider_id: str) -> None:
+        if provider_id == "ollama:start":
+            providers.start_ollama()
+            self._js("mnAI && mnAI.setStarting(true)")
+            QTimer.singleShot(3000, self._after_ollama_start)
             return
-        widget = new
-        while widget is not None:
-            if widget is self.dock:
-                return
-            widget = widget.parentWidget()
-        self._mute_shortcuts(False)
+        self.provider_id = provider_id
+        if mw.pm.profile is not None:
+            mw.pm.profile["mn_ai_provider"] = provider_id
+        self._push_context()
+
+    def _after_ollama_start(self) -> None:
+        self.refresh_providers()
+        ollama = [p for p in self.catalog if p["kind"] == "ollama"]
+        if ollama and not self.provider()["id"].startswith("ollama:"):
+            self.select(ollama[0]["id"])
+        else:
+            self._push_context()
+        self._js("mnAI && mnAI.setStarting(false)")
 
     # visibility ------------------------------------------------------
 
@@ -175,6 +227,7 @@ class AIPanel:
         if not self.loaded:
             self.web.stdHtml('<div id="mn-ai"></div>', context=self)
             self.loaded = True
+        self.refresh_providers()
         self.dock.show()
         width = int(mw.pm.profile.get("mn_ai_width", 360)) if mw.pm.profile else 360
         mw.resizeDocks([self.dock], [width], Qt.Orientation.Horizontal)
@@ -223,13 +276,17 @@ class AIPanel:
 
     def _push_context(self, ctx: Optional[dict] = None) -> None:
         ctx = ctx or current_card_context()
-        cfg = mw.addonManager.getConfig(__name__) or {}
+        current = self.provider()
         view = {
             "state": ctx.get("state"),
             "deck": ctx.get("deck", ""),
             "revealed": bool(ctx.get("revealed")),
-            "ready": bool(find_claude(cfg.get("claude_path", ""))),
             "shortcut": TOGGLE_LABEL,
+            "provider": current["id"] if current else None,
+            "providers": [
+                {k: p.get(k) for k in ("id", "kind", "group", "name", "detail", "available", "reason")}
+                for p in self.catalog
+            ],
         }
         self._js(f"mnAI && mnAI.setContext({json.dumps(view)})")
 
@@ -254,6 +311,11 @@ class AIPanel:
             self.messages = []
             self._js("mnAI && mnAI.reset()")
             self._push_context()
+        elif kind == "select":
+            self.select(str(msg.get("id", "")))
+        elif kind == "refresh":
+            self.refresh_providers()
+            self._push_context()
         elif kind == "close":
             self.close()
         elif kind == "focus":
@@ -267,58 +329,75 @@ class AIPanel:
     def send(self, text: str) -> None:
         if not text or self.run:
             return
-        cfg = mw.addonManager.getConfig(__name__) or {}
-        exe = find_claude(cfg.get("claude_path", ""))
-        if not exe:
-            self._js("mnAI && mnAI.error(" + json.dumps(
-                "Claude Code isn't installed on this Mac, or Anki can't find it."
-            ) + ", 'missing')")
+        provider = self.provider()
+        if not provider or not provider.get("available"):
+            reason = (provider or {}).get("reason") or "Pick a model from the menu at the top of the panel."
+            self._js(f"mnAI && mnAI.error({json.dumps(reason)}, 'missing')")
             return
+        cfg = self._cfg()
         ctx = current_card_context()
-        prompt = build_prompt(ctx, self.messages, text)
+        name = provider["name"]
+        system = SYSTEM_PROMPT.format(name=name if provider["kind"] != "ollama" else "a study assistant")
+        history = list(self.messages)
         self.messages.append({"role": "user", "text": text})
         self.partial = ""
 
         def on_delta(chunk: str) -> None:
-            mw.taskman.run_on_main(lambda: self._delta(run, chunk))
+            mw.taskman.run_on_main(lambda: self._delta(run_ref[0], chunk))
 
         def on_done() -> None:
-            mw.taskman.run_on_main(lambda: self._finish(run, None))
+            mw.taskman.run_on_main(lambda: self._finish(run_ref[0], None))
 
         def on_error(message: str) -> None:
-            mw.taskman.run_on_main(lambda: self._finish(run, message))
+            mw.taskman.run_on_main(lambda: self._finish(run_ref[0], message))
 
-        run = ClaudeRun(
-            exe=exe,
-            system_prompt=SYSTEM_PROMPT,
-            prompt=prompt,
-            cwd=WORKDIR,
-            model=str(cfg.get("ai_model", "") or ""),
-            on_delta=on_delta,
-            on_done=on_done,
-            on_error=on_error,
-        )
-        self.run = run
-        run.start()
+        run_ref: list = [None]
+        self._run_provider = provider
+        try:
+            run_ref[0] = providers.start_run(
+                provider,
+                cfg,
+                system,
+                build_prompt(ctx, history, text),
+                build_chat(ctx, history, text),
+                WORKDIR,
+                on_delta,
+                on_done,
+                on_error,
+            )
+        except Exception as exc:
+            self.messages.pop()
+            self._js(f"mnAI && mnAI.error({json.dumps(str(exc))}, 'error')")
+            return
+        self.run = run_ref[0]
 
-    def _delta(self, run: ClaudeRun, chunk: str) -> None:
-        if run is not self.run:
+    def _delta(self, run, chunk: str) -> None:
+        if run is None or run is not self.run:
             return
         self.partial += chunk
         self._js(f"mnAI && mnAI.delta({json.dumps(chunk)})")
 
-    def _finish(self, run: ClaudeRun, error: Optional[str]) -> None:
-        if run is not self.run:
-            return
-        self.run = None
+    def _record_partial(self) -> None:
         if self.partial:
-            self.messages.append({"role": "assistant", "text": self.partial})
+            self.messages.append({
+                "role": "assistant",
+                "text": self.partial,
+                "provider": self._run_provider.get("name", ""),
+            })
         elif self.messages and self.messages[-1]["role"] == "user":
             self.messages.pop()  # nothing came back; let them retry cleanly
         self.partial = ""
+
+    def _finish(self, run, error: Optional[str]) -> None:
+        if run is None or run is not self.run:
+            return
+        self.run = None
+        self._record_partial()
         if error:
-            kind = "signin" if re.search(r"log ?in|/login|auth|credential", error, re.I) else "error"
-            self._js(f"mnAI && mnAI.error({json.dumps(error)}, {json.dumps(kind)})")
+            kind = self._run_provider.get("kind", "")
+            signin = kind in SIGN_IN and re.search(r"log ?in|sign ?in|/login|auth|credential|401", error, re.I)
+            hint = SIGN_IN[kind] if signin else ""
+            self._js(f"mnAI && mnAI.error({json.dumps(error)}, {json.dumps('signin' if signin else 'error')}, {json.dumps(hint)})")
         else:
             self._js("mnAI && mnAI.done()")
 
@@ -328,11 +407,7 @@ class AIPanel:
             return
         run.cancel()
         self.run = None
-        if self.partial:
-            self.messages.append({"role": "assistant", "text": self.partial})
-        elif self.messages and self.messages[-1]["role"] == "user":
-            self.messages.pop()
-        self.partial = ""
+        self._record_partial()
         self._js("mnAI && mnAI.done(true)")
 
     def _cancel_run(self) -> None:
@@ -384,6 +459,16 @@ class AIPanel:
             self._muted_shortcuts = []
             self._muted_actions = []
 
+    def _on_focus_changed(self, _old, new) -> None:
+        if not (self._muted_shortcuts or self._muted_actions):
+            return
+        widget = new
+        while widget is not None:
+            if widget is self.dock:
+                return
+            widget = widget.parentWidget()
+        self._mute_shortcuts(False)
+
     def _state_changed(self) -> None:
         # Changing screens rebuilds Anki's shortcuts; re-mute if still typing.
         if self._muted_shortcuts or self._muted_actions:
@@ -415,16 +500,16 @@ def setup() -> None:
         links.append(
             toolbar.create_link(
                 "mn-ai",
-                "Ask Claude",
+                "Ask AI",
                 lambda: _ensure().toggle(),
-                tip=f"Ask Claude about this card ({TOGGLE_LABEL})",
+                tip=f"Ask an AI about this card ({TOGGLE_LABEL})",
                 id="mn-ai",
             )
         )
 
     gui_hooks.top_toolbar_did_init_links.append(add_link)
 
-    action = QAction("Ask Claude", mw)
+    action = QAction("Ask AI", mw)
     action.setShortcut(QKeySequence(TOGGLE_KEY))
     action.triggered.connect(lambda: _ensure().toggle())
     mw.form.menuTools.addSeparator()

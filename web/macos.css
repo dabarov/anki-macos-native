@@ -291,7 +291,7 @@
   transition-duration: 70ms;
   transition-timing-function: ease-out;
 }
-/* A toolbar button whose panel is open (Ask Claude) stays lit, like a
+/* A toolbar button whose panel is open (Ask AI) stays lit, like a
    selected toggle in an NSToolbar. */
 :root[data-mn="toolbar"] body .toolbar .hitem.mn-active,
 :root[data-mn="toolbar"] body .toolbar .hitem.mn-active:hover {

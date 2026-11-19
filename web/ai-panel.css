@@ -1,4 +1,4 @@
-/* Ask Claude panel. Uses the tokens from macos.css (loaded first). */
+/* Ask AI panel. Uses the tokens from macos.css (loaded first). */
 
 :root[data-mn="ai"],
 :root[data-mn="ai"] body {
@@ -24,17 +24,160 @@
   align-items: center;
   justify-content: space-between;
   height: 40px;
-  padding: 6px 10px 0 16px;
+  padding: 6px 10px 0 10px;
   flex: none;
-}
-.ai-title {
-  font-weight: 600;
-  font-size: 13px;
-  letter-spacing: -0.006em;
 }
 .ai-actions {
   display: flex;
   gap: 2px;
+}
+
+/* Model picker: the title doubles as a pull-down, like a toolbar pop-up. */
+:root[data-mn="ai"] button.ai-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  height: 28px;
+  margin: 0;
+  padding: 0 8px 0 6px;
+  font-weight: 600;
+  color: var(--mn-label);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  box-shadow: none;
+}
+:root[data-mn="ai"] button.ai-picker:hover,
+:root[data-mn="ai"] button.ai-picker.is-open {
+  background: var(--mn-fill);
+}
+:root[data-mn="ai"] button.ai-picker:active {
+  background: var(--mn-fill-strong);
+  transform: none;
+}
+.ai-picker-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ai-picker svg {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  color: var(--mn-secondary);
+  transition: transform var(--mn-snap-dur) var(--mn-snap);
+}
+.ai-picker.is-open svg {
+  transform: rotate(180deg);
+}
+
+/* The menu grows from its trigger (top-left), as a material arriving. */
+.ai-menu {
+  position: absolute;
+  z-index: 20;
+  top: 42px;
+  left: 10px;
+  width: min(280px, calc(100vw - 20px));
+  max-height: calc(100vh - 60px);
+  overflow-y: auto;
+  padding: 5px;
+  background: var(--mn-glass);
+  border: 0.5px solid var(--mn-glass-border);
+  border-radius: 12px;
+  box-shadow: inset 0 0.5px 0 var(--mn-glass-edge), 0 10px 32px rgba(0, 0, 0, 0.18), 0 1px 3px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(28px) saturate(180%);
+  transform-origin: 0 0;
+  animation: ai-menu-in var(--mn-snap-dur) var(--mn-snap) both;
+}
+.ai-menu[hidden] {
+  display: none;
+}
+@keyframes ai-menu-in {
+  from { opacity: 0; transform: scale(0.96); filter: blur(3px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+.ai-menu-group {
+  padding: 7px 9px 3px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.006em;
+  color: var(--mn-secondary);
+}
+.ai-menu-group:not(:first-child) {
+  margin-top: 4px;
+  border-top: 0.5px solid var(--mn-separator);
+  padding-top: 9px;
+}
+:root[data-mn="ai"] button.ai-menu-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+  height: auto;
+  margin: 0;
+  padding: 5px 9px 5px 4px;
+  text-align: start;
+  color: var(--mn-label);
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  box-shadow: none;
+}
+:root[data-mn="ai"] button.ai-menu-item:hover:not([disabled]),
+:root[data-mn="ai"] button.ai-menu-item:focus-visible {
+  color: var(--mn-on-accent);
+  background: var(--mn-accent);
+  box-shadow: none;
+}
+:root[data-mn="ai"] button.ai-menu-item:active:not([disabled]) {
+  transform: none;
+}
+:root[data-mn="ai"] button.ai-menu-item[disabled] {
+  color: var(--mn-tertiary);
+  background: transparent;
+}
+.ai-menu-check {
+  flex: none;
+  width: 14px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.ai-menu-check svg {
+  width: 11px;
+  height: 11px;
+}
+.ai-menu-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.ai-menu-name {
+  font-size: 13px;
+  line-height: 18px;
+}
+.ai-menu-detail {
+  font-size: 11px;
+  line-height: 14px;
+  letter-spacing: 0.006em;
+  color: var(--mn-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+:root[data-mn="ai"] button.ai-menu-item:hover:not([disabled]) .ai-menu-detail,
+:root[data-mn="ai"] button.ai-menu-item:focus-visible .ai-menu-detail {
+  color: color-mix(in srgb, var(--mn-on-accent) 80%, transparent);
+}
+:root[data-mn="ai"] button.ai-menu-item[disabled] .ai-menu-detail {
+  color: var(--mn-tertiary);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .ai-menu { background: var(--mn-group); backdrop-filter: none; }
+  :root.night-mode[data-mn="ai"] .ai-menu { background: #3a3a3a; }
 }
 
 :root[data-mn="ai"] button.ai-icon {
@@ -177,6 +320,17 @@
 }
 .ai-user {
   justify-content: flex-end;
+}
+.ai-reply {
+  flex-direction: column;
+  gap: 3px;
+}
+/* Which model wrote this reply, since a thread can mix several. */
+.ai-who {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.006em;
+  color: var(--mn-secondary);
 }
 .ai-bubble {
   max-width: 85%;
@@ -402,10 +556,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mn-in { animation: mn-fade 160ms ease both; }
+  .mn-in, .ai-menu { animation: mn-fade 160ms ease both; }
   .ai-typing i { animation: none; opacity: 0.6; }
+  .ai-picker svg { transition: none; }
 }
-:root[data-mn="ai"] body.reduce-motion .mn-in { animation: mn-fade 160ms ease both; }
+:root[data-mn="ai"] body.reduce-motion .mn-in,
+:root[data-mn="ai"] body.reduce-motion .ai-menu { animation: mn-fade 160ms ease both; }
 :root[data-mn="ai"] body.reduce-motion .ai-typing i { animation: none; opacity: 0.6; }
 
 @media (prefers-contrast: more) {
