@@ -54,13 +54,15 @@ range="${last_tag:+$last_tag..}HEAD"
 [ -n "$(git log --format=%H "$range")" ] || fail "No commits since $last_tag. Nothing to release."
 
 notes="$(mktemp)"
-trap 'rm -f "$notes"' EXIT
-git log --format='%s' "$range" | python3 - "$tag" "$last_tag" > "$notes" <<'EOF'
+subjects="$(mktemp)"
+trap 'rm -f "$notes" "$subjects"' EXIT
+git log --reverse --format='%s' "$range" > "$subjects"
+python3 - "$tag" "$last_tag" "$subjects" > "$notes" <<'EOF'
 import re, sys
-tag, last = sys.argv[1], sys.argv[2]
+tag, last, subjects = sys.argv[1], sys.argv[2], sys.argv[3]
 groups = {"feat": "Features", "fix": "Fixes", "perf": "Performance"}
 out = {title: [] for title in [*groups.values(), "Other changes"]}
-for line in sys.stdin.read().splitlines():
+for line in open(subjects).read().splitlines():
     m = re.match(r"^(\w+)(\([^)]*\))?(!)?:\s*(.+)$", line)
     if not m:
         out["Other changes"].append(line)
