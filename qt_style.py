@@ -1,6 +1,6 @@
-"""Qt parts of Anki: pop-up menus, the Browser's table and sidebar, the card
-preview's button bar, the card template editor, and default buttons in the
-Add and Preferences windows.
+"""Qt parts of Anki: pop-up menus, list and text boxes in every dialog, the
+Browser's table and sidebar, the card preview's button bar, the card template
+editor, and default buttons in the Add and Preferences windows.
 
 Controls such as buttons, pop-up buttons and checkboxes are left to the
 native macOS style, which already draws them as Tahoe controls. These rules
@@ -26,13 +26,13 @@ def _palette(dark: bool) -> dict:
             "menu": "#2b2b2d", "border": "rgba(255, 255, 255, 0.14)", "fg": "rgba(255, 255, 255, 0.88)",
             "secondary": "rgba(255, 255, 255, 0.55)", "disabled": "rgba(255, 255, 255, 0.3)",
             "sep": "rgba(255, 255, 255, 0.12)", "hover": "rgba(255, 255, 255, 0.07)",
-            "sidebar": "#262628", "alt": "rgba(255, 255, 255, 0.035)",
+            "sidebar": "#262628", "alt": "rgba(255, 255, 255, 0.035)", "inactive": "rgba(255, 255, 255, 0.14)",
         }
     return {
         "menu": "#f6f6f6", "border": "rgba(0, 0, 0, 0.14)", "fg": "rgba(0, 0, 0, 0.86)",
         "secondary": "rgba(0, 0, 0, 0.5)", "disabled": "rgba(0, 0, 0, 0.28)",
         "sep": "rgba(0, 0, 0, 0.1)", "hover": "rgba(0, 0, 0, 0.05)",
-        "sidebar": "#f0f0f2", "alt": "rgba(0, 0, 0, 0.025)",
+        "sidebar": "#f0f0f2", "alt": "rgba(0, 0, 0, 0.025)", "inactive": "rgba(0, 0, 0, 0.1)",
     }
 
 
@@ -68,8 +68,41 @@ QMenu::separator {{
     margin: 5px 10px;
 }}
 
+QListView, QTreeView, QTableView {{
+    background: palette(base);
+    border: 1px solid {p["border"]};
+    border-radius: 8px;
+    padding: 4px;
+    selection-background-color: {accent};
+    selection-color: #ffffff;
+}}
+QListView::item, QTreeView::item {{
+    padding: 3px 6px;
+    border-radius: 5px;
+}}
+QListView::item:selected, QTreeView::item:selected {{
+    color: #ffffff;
+    background: {accent};
+}}
+QListView::item:selected:!active, QTreeView::item:selected:!active,
+QTableView::item:selected:!active {{
+    color: {p["fg"]};
+    background: {p["inactive"]};
+}}
+QTextEdit, QPlainTextEdit {{
+    background: palette(base);
+    border: 1px solid {p["border"]};
+    border-radius: 8px;
+    padding: 4px;
+}}
+QTextEdit:focus, QPlainTextEdit:focus {{
+    border: 1px solid {accent};
+}}
+
 Browser QTableView#tableView {{
     border: none;
+    border-radius: 0;
+    padding: 0;
     gridline-color: transparent;
     alternate-background-color: {p["alt"]};
     selection-background-color: {accent};
@@ -90,6 +123,7 @@ Browser QTableView#tableView QHeaderView::section:hover {{
 Browser SidebarTreeView {{
     background: {p["sidebar"]};
     border: none;
+    border-radius: 0;
     padding: 4px 6px;
 }}
 Browser SidebarTreeView::item {{
@@ -102,6 +136,10 @@ Browser SidebarTreeView::item:hover:!selected {{
 Browser SidebarTreeView::item:selected {{
     color: #ffffff;
     background: {accent};
+}}
+Browser SidebarTreeView::item:selected:!active {{
+    color: {p["fg"]};
+    background: {p["inactive"]};
 }}
 
 CardLayout QTextEdit, CardLayout QPlainTextEdit {{

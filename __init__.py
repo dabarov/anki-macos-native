@@ -83,8 +83,24 @@ def _accent() -> tuple[str, str]:
     return _ACCENT
 
 
+# Web views that render cards keep exactly what the note type's CSS says.
+CARD_RENDERERS = {"CardLayout"}
+
+
+def screen_for(context) -> str | None:
+    """Known screens get their own styles. Anything else, such as About, Find
+    Duplicates, Empty Cards, or a screen a newer Anki adds, gets the generic
+    page theme, so new windows match without a change here."""
+    name = type(context).__name__
+    if name in SCREENS:
+        return SCREENS[name]
+    if name in CARD_RENDERERS:
+        return None
+    return "page"
+
+
 def on_webview_will_set_content(web_content, context) -> None:
-    screen = SCREENS.get(type(context).__name__)
+    screen = screen_for(context)
     if not screen:
         return
     light, dark = _accent()
@@ -92,7 +108,9 @@ def on_webview_will_set_content(web_content, context) -> None:
     base = f"/_addons/{ADDON}/web"
     web_content.css.append(f"{base}/macos.css")
     web_content.js.append(f"{base}/macos.js")
-    if screen == "ai":
+    if screen == "page":
+        web_content.css.append(f"{base}/pages.css")
+    elif screen == "ai":
         web_content.css.append(f"{base}/ai-panel.css")
         web_content.js.append(f"{base}/ai-panel.js")
     elif screen == "editor":
@@ -179,8 +197,11 @@ except Exception:
 
 # Dev-only tools, inert unless their variable names an output folder:
 # ANKI_MN_SNAPSHOT saves each screen as PNG (no screen-recording permission
-# needed); ANKI_MN_AUDIT writes the computed fonts of every screen.
+# needed); ANKI_MN_AUDIT writes the computed fonts of every screen;
+# ANKI_MN_SWEEP opens and captures every window in light and dark.
 if os.environ.get("ANKI_MN_SNAPSHOT"):
     from . import snapshot  # noqa: F401
 if os.environ.get("ANKI_MN_AUDIT"):
     from . import audit  # noqa: F401
+if os.environ.get("ANKI_MN_SWEEP"):
+    from . import sweep  # noqa: F401

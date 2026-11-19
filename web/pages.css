@@ -278,3 +278,45 @@
 :root[data-mn="page"] div:has(> label > input[type="radio"]) > label:has(input:focus-visible) {
   box-shadow: 0 0 0 3px var(--mn-focus);
 }
+
+/* ── Shared pieces on any page ──────────────────────────────── */
+
+/* Tables (CSV preview, review history, reports): quiet header, thin rows */
+:root[data-mn="page"] table {
+  border-collapse: collapse;
+}
+:root[data-mn="page"] table th {
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--mn-secondary);
+  background: transparent;
+  border: 0;
+  border-bottom: 0.5px solid var(--mn-separator);
+}
+:root[data-mn="page"] table td {
+  padding: 5px 10px;
+  border: 0;
+  border-bottom: 0.5px solid var(--mn-separator);
+}
+:root[data-mn="page"] table tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Tag fields (CSV import, editor-like pages) */
+:root[data-mn="page"] .tag-editor {
+  background: var(--mn-control);
+  border: 0.5px solid var(--mn-control-border) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--mn-shadow-sm);
+}
+:root[data-mn="page"] .tag-editor:focus-within {
+  border-color: transparent !important;
+  box-shadow: 0 0 0 3.5px var(--mn-focus);
+}
+
+/* Legacy pages (About, reports): readable text width and spacing */
+:root[data-mn="page"] body > p,
+:root[data-mn="page"] body > div > p {
+  line-height: 1.5;
+}
