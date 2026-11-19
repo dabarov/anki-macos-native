@@ -171,6 +171,10 @@ CardLayout QRadioButton:checked {{
     border: 1px solid {p["border"]};
 }}
 
+QFrame#mnReportFrame {{
+    border: none;
+}}
+
 QFrame#mnPreviewDivider {{
     background: {p["sep"]};
     border: none;
@@ -278,6 +282,24 @@ def _patch_previewer() -> None:
     previewer.MultiCardPreviewer._create_gui = create
 
 
+def _patch_find_duplicates() -> None:
+    """Drop the square box around the duplicates report; the report draws
+    its own grouped list."""
+    from aqt.browser import find_duplicates
+
+    original = find_duplicates.FindDuplicatesDialog.__init__
+
+    def init(self, *args, **kwargs):
+        original(self, *args, **kwargs)
+        frame = self.form.webView.parentWidget()
+        if frame is not None and frame is not self:
+            frame.setObjectName("mnReportFrame")
+            frame.style().unpolish(frame)
+            frame.style().polish(frame)
+
+    find_duplicates.FindDuplicatesDialog.__init__ = init
+
+
 def _add_cards_opened(addcards) -> None:
     """Add is the window's main action, so draw it as the default button."""
     addcards.addButton.setDefault(True)
@@ -333,6 +355,7 @@ def setup(accent: Callable[[], tuple[str, str]]) -> None:
     gui_hooks.add_cards_did_init.append(_add_cards_opened)
     _patch_preferences()
     _patch_previewer()
+    _patch_find_duplicates()
 
     def reapply() -> None:
         from aqt.theme import theme_manager

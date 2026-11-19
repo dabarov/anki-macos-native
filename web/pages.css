@@ -320,3 +320,30 @@
 :root[data-mn="page"] body > div > p {
   line-height: 1.5;
 }
+
+/* Report lists (Find Duplicates, Empty Cards): a grouped list, one row per
+   item, instead of a bare numbered list. */
+:root[data-mn="page"] body > ol,
+:root[data-mn="page"] body > div > ol {
+  margin: 10px 0 16px;
+  padding: 0;
+  list-style: none;
+  background: var(--mn-group);
+  border: 0.5px solid var(--mn-group-border);
+  border-radius: 10px;
+  box-shadow: var(--mn-shadow-sm);
+  overflow: hidden;
+}
+:root[data-mn="page"] body > ol > li,
+:root[data-mn="page"] body > div > ol > li {
+  padding: 8px 12px;
+  line-height: 1.4;
+}
+:root[data-mn="page"] body > ol > li + li,
+:root[data-mn="page"] body > div > ol > li + li {
+  border-top: 0.5px solid var(--mn-separator);
+}
+:root[data-mn="page"] body > ol a,
+:root[data-mn="page"] body > div > ol a {
+  font-weight: 500;
+}
