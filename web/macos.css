@@ -131,8 +131,10 @@
   background: color-mix(in srgb, var(--mn-accent) 28%, transparent);
 }
 
-/* Push buttons: capsule, hairline edge, presses in on pointer-down. */
-:root[data-mn]:not([data-mn="reviewer"]):not([data-mn="page"]):not([data-mn="editor"]) button {
+/* Push buttons: capsule, hairline edge, presses in on pointer-down.
+   One :not() with a list keeps this rule light (one attribute's worth), so
+   screens like the AI panel can restyle their own buttons over it. */
+:root[data-mn]:not([data-mn="reviewer"], [data-mn="page"], [data-mn="editor"]) button {
   box-sizing: border-box;
   height: 28px;
   padding: 0 14px;
@@ -153,13 +155,13 @@
     box-shadow 160ms ease-out;
 }
 
-:root[data-mn]:not([data-mn="reviewer"]):not([data-mn="page"]):not([data-mn="editor"]) button:hover {
+:root[data-mn]:not([data-mn="reviewer"], [data-mn="page"], [data-mn="editor"]) button:hover {
   background: var(--mn-control-hover);
   border-color: var(--mn-control-border);
 }
 
 /* Feedback lives on the press, and it's instant. */
-:root[data-mn]:not([data-mn="reviewer"]):not([data-mn="page"]):not([data-mn="editor"]) button:active {
+:root[data-mn]:not([data-mn="reviewer"], [data-mn="page"], [data-mn="editor"]) button:active {
   transform: scale(0.97);
   background: var(--mn-control-pressed);
   box-shadow: none;
@@ -167,12 +169,12 @@
   transition-timing-function: ease-out;
 }
 
-:root[data-mn]:not([data-mn="reviewer"]):not([data-mn="page"]):not([data-mn="editor"]) button:focus-visible {
+:root[data-mn]:not([data-mn="reviewer"], [data-mn="page"], [data-mn="editor"]) button:focus-visible {
   box-shadow: 0 0 0 3.5px var(--mn-focus);
 }
 
-:root[data-mn]:not([data-mn="reviewer"]):not([data-mn="page"]):not([data-mn="editor"]) button[disabled],
-:root[data-mn]:not([data-mn="reviewer"]):not([data-mn="page"]):not([data-mn="editor"]) button[disabled]:hover {
+:root[data-mn]:not([data-mn="reviewer"], [data-mn="page"], [data-mn="editor"]) button[disabled],
+:root[data-mn]:not([data-mn="reviewer"], [data-mn="page"], [data-mn="editor"]) button[disabled]:hover {
   color: var(--mn-tertiary);
   background: var(--mn-control);
   box-shadow: none;

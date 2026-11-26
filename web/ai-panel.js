@@ -310,6 +310,7 @@
     els.sendBtn.classList.toggle("is-stop", streaming);
     els.sendBtn.innerHTML = streaming ? ICON.stop : ICON.send;
     els.sendBtn.setAttribute("aria-label", streaming ? "Stop" : "Send");
+    els.sendBtn.title = streaming ? "Stop" : "Send (Return)";
     els.sendBtn.disabled = !streaming && (empty || !ready());
   }
 
