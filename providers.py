@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -101,6 +102,50 @@ def start_ollama() -> None:
     else:
         exe = shutil.which("ollama") or "/usr/local/bin/ollama"
         subprocess.Popen([exe, "serve"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+# ── Sign-in ─────────────────────────────────────────────────────────
+
+_SIGN_IN = {
+    "claude": ("Claude Code", find_claude, "claude_path", ["auth", "login"], ""),
+    "codex": ("ChatGPT (Codex)", find_codex, "codex_path", ["login"], ""),
+    "gemini": ("Gemini", find_gemini, "gemini_path", [],
+               "Sign in when Gemini asks, then type /quit."),
+}
+
+
+def can_sign_in(kind: str) -> bool:
+    return kind in _SIGN_IN
+
+
+def open_sign_in(kind: str, cfg: dict, workdir: str) -> None:
+    """Open Terminal running the assistant's own sign-in command.
+
+    The credentials go straight to the CLI; Anki never sees them.
+    """
+    name, finder, key, args, note = _SIGN_IN[kind]
+    exe = finder(cfg.get(key, ""))
+    if not exe:
+        raise RuntimeError(f"{name} isn't installed")
+    lines = [
+        "#!/bin/zsh",
+        "clear",
+        f"echo {shlex.quote(f'Signing in to {name} for Ask AI in Anki.')}",
+    ]
+    if note:
+        lines.append(f"echo {shlex.quote(note)}")
+    lines += [
+        "echo",
+        " ".join(shlex.quote(a) for a in [exe, *args]),
+        "echo",
+        "echo 'Done. Close this window and ask again in Anki.'",
+    ]
+    os.makedirs(workdir, exist_ok=True)
+    script = os.path.join(workdir, f"sign-in-{kind}.command")
+    with open(script, "w") as f:
+        f.write("\n".join(lines) + "\n")
+    os.chmod(script, 0o700)
+    subprocess.Popen(["open", "-a", "Terminal", script])
 
 
 # ── Catalog ─────────────────────────────────────────────────────────

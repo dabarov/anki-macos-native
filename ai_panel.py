@@ -49,9 +49,9 @@ language the student writes in. Answer from what you know; don't run tools \
 or read files."""
 
 SIGN_IN = {
-    "claude": "Run <code>claude</code> in Terminal and sign in, then try again.",
-    "codex": "Open ChatGPT and sign in, or run <code>codex login</code> in Terminal.",
-    "gemini": "Run <code>gemini</code> in Terminal and sign in, then try again.",
+    "claude": "Claude Code on this Mac is signed out. Sign in from Terminal, then ask again.",
+    "codex": "ChatGPT's Codex is signed out. Sign in from Terminal, then ask again.",
+    "gemini": "The Gemini CLI is signed out. Sign in from Terminal, then ask again.",
 }
 
 
@@ -316,6 +316,8 @@ class AIPanel:
         elif kind == "refresh":
             self.refresh_providers()
             self._push_context()
+        elif kind == "signin":
+            self._sign_in()
         elif kind == "close":
             self.close()
         elif kind == "focus":
@@ -400,6 +402,15 @@ class AIPanel:
             self._js(f"mnAI && mnAI.error({json.dumps(error)}, {json.dumps('signin' if signin else 'error')}, {json.dumps(hint)})")
         else:
             self._js("mnAI && mnAI.done()")
+
+    def _sign_in(self) -> None:
+        kind = (self.provider() or {}).get("kind", "")
+        if not providers.can_sign_in(kind):
+            return
+        try:
+            providers.open_sign_in(kind, self._cfg(), WORKDIR)
+        except Exception as exc:
+            self._js(f"mnAI && mnAI.error({json.dumps(str(exc))}, 'error')")
 
     def stop(self) -> None:
         run = self.run

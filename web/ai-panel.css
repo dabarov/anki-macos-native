@@ -461,6 +461,13 @@
   margin: 2px 0 0;
   color: var(--mn-secondary);
 }
+:root[data-mn="ai"] button.ai-error-action {
+  height: 22px;
+  margin: 8px 0 0;
+  padding: 0 10px;
+  font-size: 12px;
+  border-radius: 6px;
+}
 
 /* ── Composer: floating field with an accent send button ────── */
 

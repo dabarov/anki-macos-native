@@ -483,6 +483,14 @@
       card.innerHTML =
         '<div class="ai-error-icon">' + ICON.warn + "</div><div><strong>" + title + "</strong><p>" +
         (hint || esc(message)) + "</p></div>";
+      if (kind === "signin") {
+        var signIn = h("button", "ai-error-action", "Sign In\u2026");
+        signIn.type = "button";
+        signIn.addEventListener("click", function () {
+          send({ type: "signin" });
+        });
+        card.lastChild.appendChild(signIn);
+      }
       clearEmpty();
       els.thread.appendChild(card);
       scrollToEnd();
